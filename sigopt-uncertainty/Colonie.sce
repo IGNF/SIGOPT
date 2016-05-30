@@ -100,6 +100,7 @@ N=3; //Nombre de tournées
 K=20; //Nombre de fourmis dans la colonie
 x=zeros(NS,NS,N); //Matrice de parcours
 y=zeros(NS,NS,N); //Matrice de déblayage
+Chemin=list(); //rajout
 C=170; //Capacité d'un véhicule
 CC=0; //Capacité courante utilisée
 rho=1/2; //Coefficient d'évaporation
@@ -112,15 +113,19 @@ MC=%inf; //Meilleur coût
 MCA=%inf; //Meilleur coût absolu
 xMS=zeros(NS,NS,N); //Meilleure solution
 yMS=zeros(NS,NS,N);
+MCh=list();
+
 NbIter=10; //Nombre d'itérations
 xMSA=zeros(NS,NS,N); //Meilleure solution absolue
 yMSA=zeros(NS,NS,N);
+MChA=list();
 Compteur=0;
 
 for n=1:NbIter
     for f=1:K
         Blocage=0;
         for k=1:N
+            Chemin(k)=1;
             while F<>1
                 q1=rand(1,"uniform");
                 if V(NC)==[]
@@ -135,6 +140,7 @@ for n=1:NbIter
                     F=find(A==max(A));
                     F=F(1);
                     x(NC,F,k)=1;
+                    Chemin(k)=[Chemin(k) F];
                     if q(NC,F)>0 then
                         y(NC,F,k)=1;
                         y(F,NC,k)=1;
@@ -143,7 +149,7 @@ for n=1:NbIter
                     q(NC,F)=0;
                     q(F,NC)=0;
                     eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
-                    eta(F,NC)=eta(NC,F)/10;
+                    eta(F,NC)=eta(F,NC)/10;
                     tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
                     V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     V(F)=V(F)(V(F)<>NC);
@@ -161,6 +167,7 @@ for n=1:NbIter
                         end
                     end
                     x(NC,F,k)=1;
+                    Chemin(k)=[Chemin(k) F];
                     if q(NC,F)>0 then
                         y(NC,F,k)=1;
                         y(F,NC,k)=1;
@@ -169,7 +176,7 @@ for n=1:NbIter
                     q(NC,F)=0;
                     q(F,NC)=0;
                     eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
-                    eta(F,NC)=eta(NC,F)/10;
+                    eta(F,NC)=eta(F,NC)/10;
                     tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
                     V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     V(F)=V(F)(V(F)<>NC);
@@ -184,12 +191,15 @@ for n=1:NbIter
                             NC=F;
                             F=pred(a,c,NC);
                             x(NC,F,k)=1;
+                            Chemin(k)=[Chemin(k) F];
                             if q(NC,F)<=C-CC & sum(y(NC,F,:))==0 & sum(y(F,NC,:))==0 then
                                 y(NC,F,k)=1; //Déblayages éventuels sur le retour
                                 y(F,NC,k)=1;
                                 CC=CC+q(NC,F);
                                 q(NC,F)=0;
                                 q(F,NC)=0;
+                                eta(NC,F)=eta(NC,F)/10;
+                                eta(F,NC)=eta(F,NC)/10;
                             end
                         end
                         break
@@ -208,16 +218,19 @@ for n=1:NbIter
         q=qA; //Réinitialisation des déchets
         if Blocage==0 & cout(x,y,c,qA,N)<MC then
             xMS=x;
+            MCh=Chemin;
             yMS=y;
             MC=cout(x,y,c,qA,N);
         end
         x=zeros(NS,NS,N);
         y=zeros(NS,NS,N);
+        Chemin=list();
     end
     if MC<MCA then
         MCA=MC;
         xMSA=xMS;
         yMSA=yMS;
+        MChA=MCh;
     end
     for i=1:NS
         for j=1:NS
@@ -229,8 +242,5 @@ for n=1:NbIter
         end
     end
 end
-disp("fourmis bloquées",Compteur)
-for h=1:N
-    [i1,i2]=find(xMSA(:,:,h));
-    disp([i1,i2])
-end
+disp(Compteur,"fourmis bloquées:")
+disp(MChA)
