@@ -151,8 +151,8 @@ for n=1:NbIter
                     eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
                     eta(F,NC)=eta(F,NC)/10;
                     tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
-                    V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
-                    V(F)=V(F)(V(F)<>NC);
+                    //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
+                    //V(F)=V(F)(V(F)<>NC);
                     NC=F;
                 else //Diversification
                     for j=V(NC)
@@ -178,8 +178,8 @@ for n=1:NbIter
                     eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
                     eta(F,NC)=eta(F,NC)/10;
                     tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
-                    V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
-                    V(F)=V(F)(V(F)<>NC);
+                    //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
+                    //V(F)=V(F)(V(F)<>NC);
                     NC=F;
                 end
                 clear A
@@ -242,5 +242,5 @@ for n=1:NbIter
         end
     end
 end
-disp(Compteur,"fourmis bloquées:")
+//disp(Compteur,"fourmis bloquées:")
 disp(MChA)
