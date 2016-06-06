@@ -105,7 +105,7 @@ C=170; //Capacité d'un véhicule
 CC=0; //Capacité courante utilisée
 rho=1/2; //Coefficient d'évaporation
 
-//Parcours d'une fourmi
+//Colonie de fourmis
 
 NC=1; //Noeud courant
 F=0;
