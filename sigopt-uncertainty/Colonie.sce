@@ -84,7 +84,17 @@ a=bool2s(c>0); //Matrice d'adjacence
 CE=300; //Coût étalon (à paramétrer)
 NA=sum(a)/2; //Nombre d'arcs
 tau0=1/(CE*NA);
-tau=tau0*a; //Matrice de phéromones
+aa=zeros(NS,NS,NS);
+for i=1:NS //Matrice de paires d'arcs orientées
+    for j=1:NS
+        for k=1:NS
+            if a(i,j)==1 & a(j,k)==1 then
+                aa(i,j,k)=1
+            end
+        end
+    end
+end
+tau=tau0*aa; //Matrice de phéromones
 CV=1/12;
 eta=CV*q; //Matrice de visibilité
 etaA=eta;
@@ -97,7 +107,7 @@ VA=V; //Voisinages absolus
 alpha=1; //Paramètre d'importance des phéromones
 beta=1; //Paramètre d'importance heuristique
 N=3; //Nombre de tournées
-K=20; //Nombre de fourmis dans la colonie
+K=40; //Nombre de fourmis dans la colonie
 x=zeros(NS,NS,N); //Matrice de parcours
 y=zeros(NS,NS,N); //Matrice de déblayage
 Chemin=list();
@@ -108,6 +118,7 @@ rho=1/2; //Coefficient d'évaporation
 //Colonie de fourmis
 
 NC=1; //Noeud courant
+NP=0; //Noeud précédent
 F=0;
 MC=%inf; //Meilleur coût
 MCA=%inf; //Meilleur coût absolu
@@ -115,7 +126,7 @@ xMS=zeros(NS,NS,N); //Meilleure solution
 yMS=zeros(NS,NS,N);
 MCh=list();
 
-NbIter=10; //Nombre d'itérations
+NbIter=100; //Nombre d'itérations
 xMSA=zeros(NS,NS,N); //Meilleure solution absolue
 yMSA=zeros(NS,NS,N);
 MChA=list();
@@ -134,7 +145,11 @@ for n=1:NbIter
                     break
                 end
                 for h=V(NC)
-                    A(h)=tau(NC,h)^alpha*eta(NC,h)^beta;
+                    if NP<>0
+                        A(h)=tau(NP,NC,h)^alpha*eta(NC,h)^beta;
+                    else
+                        A(h)=eta(NC,h)^beta;
+                    end
                 end
                 if q1<=q0 then //Intensification
                     F=find(A==max(A));
@@ -148,11 +163,14 @@ for n=1:NbIter
                     CC=CC+q(NC,F);
                     q(NC,F)=0;
                     q(F,NC)=0;
-                    eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
-                    eta(F,NC)=eta(F,NC)/10;
-                    tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
+                    eta(NC,F)=eta(NC,F)/100; //Baisse de visibilité
+                    eta(F,NC)=eta(F,NC)/100;
+                    if NP<>0
+                        tau(NP,NC,F)=(1-rho)*tau(NP,NC,F)+rho*tau0; //Renouvellement local
+                    end
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
+                    NP=NC;
                     NC=F;
                 else //Diversification
                     for j=V(NC)
@@ -175,11 +193,12 @@ for n=1:NbIter
                     CC=CC+q(NC,F);
                     q(NC,F)=0;
                     q(F,NC)=0;
-                    eta(NC,F)=eta(NC,F)/10; //Baisse de visibilité
-                    eta(F,NC)=eta(F,NC)/10;
+                    eta(NC,F)=eta(NC,F)/100; //Baisse de visibilité
+                    eta(F,NC)=eta(F,NC)/100;
                     tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
+                    NP=NC;
                     NC=F;
                 end
                 clear A
@@ -188,6 +207,7 @@ for n=1:NbIter
                 for h=V(NC)
                     if q(NC,h)>C-CC then //Retour à la maison
                         while F<>1
+                            NP=NC;
                             NC=F;
                             F=pred(a,c,NC);
                             x(NC,F,k)=1;
@@ -198,8 +218,8 @@ for n=1:NbIter
                                 CC=CC+q(NC,F);
                                 q(NC,F)=0;
                                 q(F,NC)=0;
-                                eta(NC,F)=eta(NC,F)/10;
-                                eta(F,NC)=eta(F,NC)/10;
+                                eta(NC,F)=eta(NC,F)/100;
+                                eta(F,NC)=eta(F,NC)/100;
                             end
                         end
                         break
@@ -209,6 +229,7 @@ for n=1:NbIter
             V=VA; //Réouverture des arcs
             CC=0; //Vidage du camion
             F=0;
+            NP=0;
             NC=1;
             if Blocage==1 then
                 break
@@ -231,14 +252,15 @@ for n=1:NbIter
         xMSA=xMS;
         yMSA=yMS;
         MChA=MCh;
+        nM=n;
     end
-    for i=1:NS
-        for j=1:NS
-            if sum(xMSA(i,j,:))>0 then
-                for h=1:sum(xMSA(i,j,:))
-                    tau(i,j)=(1-rho)*tau(i,j)+rho/MCA;
-                end
-            end
+    for NN=1:N //Renouvellement global
+        for j=2:(length(MChA(NN))-1)
+            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))+rho/MCA;
+        end
+        j=j+1;
+        if NN<>N
+            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))+rho/MCA;
         end
     end
 end
