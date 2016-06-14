@@ -168,6 +168,7 @@ for n=1:NbIter
                     eta(F,NC)=eta(F,NC)/100;
                     if NP<>0
                         tau(NP,NC,F)=(1-rho)*tau(NP,NC,F)+rho*tau0; //Renouvellement local
+                        tau(NC,NP,F)=(1-rho)*tau(NC,NP,F)+rho*tau0;
                     end
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
@@ -196,7 +197,10 @@ for n=1:NbIter
                     q(F,NC)=0;
                     eta(NC,F)=eta(NC,F)/100; //Baisse de visibilité
                     eta(F,NC)=eta(F,NC)/100;
-                    tau(NC,F)=(1-rho)*tau(NC,F)+rho*tau0; //Renouvellement local
+                    if NP<>0
+                        tau(NP,NC,F)=(1-rho)*tau(NP,NC,F)+rho*tau0; //Renouvellement local
+                        tau(NC,NP,F)=(1-rho)*tau(NC,NP,F)+rho*tau0;
+                    end
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
                     NP=NC;
