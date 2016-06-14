@@ -89,7 +89,7 @@ for i=1:NS //Matrice de paires d'arcs orientées
     for j=1:NS
         for k=1:NS
             if a(i,j)==1 & a(j,k)==1 then
-                aa(i,j,k)=1
+                aa(i,j,k)=1;
             end
         end
     end
@@ -131,6 +131,7 @@ xMSA=zeros(NS,NS,N); //Meilleure solution absolue
 yMSA=zeros(NS,NS,N);
 MChA=list();
 Compteur=0;
+X=[];
 
 for n=1:NbIter
     for f=1:K
@@ -209,7 +210,7 @@ for n=1:NbIter
                         while F<>1
                             NP=NC;
                             NC=F;
-                            F=pred(a,c,NC);
+                            F=pred(a,c,NC,1);
                             x(NC,F,k)=1;
                             Chemin(k)=[Chemin(k) F];
                             if q(NC,F)<=C-CC & sum(y(NC,F,:))==0 & sum(y(F,NC,:))==0 then
@@ -254,6 +255,7 @@ for n=1:NbIter
         MChA=MCh;
         nM=n;
     end
+    X=[X MCA];
     for NN=1:N //Renouvellement global
         for j=2:(length(MChA(NN))-1)
             tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))+rho/MCA;
