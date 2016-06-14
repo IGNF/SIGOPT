@@ -1,13 +1,13 @@
 //Sous-fonctions
 
 //Dijkstra
-function [d]=Dijkstra(a,c)
+function [d]=Dijkstra(a,c,ref) //Matrice d'adjacence, de coûts, sommet de référence
     P=[];
     l=size(a,1);
     c(a==0)=%inf;
     S=1:l;
     d0=%inf*ones(1,l);
-    d0(1)=0;
+    d0(ref)=0;
     while S<>[]
         F=find(d0==min(d0(S)));
         F=intersect(F,S);
@@ -21,9 +21,9 @@ function [d]=Dijkstra(a,c)
     d=d0;
 endfunction
 
-//Prédécesseur dans le plus court chemin
-function p=pred(a,c,h)
-    d=Dijkstra(a,c);
+//Prédécesseur dans le plus court chemin du noeud h par rapport au noeud ref
+function p=pred(a,c,h,ref)
+    d=Dijkstra(a,c,ref);
     c(a==0)=%inf;
     l=size(a,1);
     for k=1:l
@@ -34,21 +34,21 @@ function p=pred(a,c,h)
     end
 endfunction
 
-//Plus court chemin de h vers 1
-function [CH]=pcch(a,c,h)
+//Plus court chemin de h vers ref
+function [CH]=pcch(a,c,h,ref)
     CH(1)=h;
     i=1;
-    while CH(i)<>1
+    while CH(i)<>ref
         i=i+1;
-        CH(i)=pred(a,c,CH(i-1));
+        CH(i)=pred(a,c,CH(i-1),ref);
     end
-    CH(i)=1;
+    CH(i)=ref;
 endfunction
 
 //Coût d'une solution
 function F=cout(x,y,c,q,N)
     lambda=1;
-    gamma=3; //Paramètres d'importances relatives des distances et des déchets
+    gamma=1; //Paramètres d'importances relatives des distances et des déchets
     X=0;
     for k=1:N
         X=X+sum(x(:,:,k).*c);
