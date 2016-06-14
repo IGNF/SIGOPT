@@ -1,5 +1,5 @@
 //Stratégie de modification/réparation
-function [MS]=modif(a,SE,Ch) //Entrées: Matrice d'adjacence initiale, sommets submergés et Chemin à réparer
+function [MS]=modif(a,SE,Ch) //Entrées: Matrice d'adjacence initiale, sommets engloutis et Chemin à réparer
     NS=size(a,1);
     for h=SE //Nouvelle matrice d'adjacence
         a(h,:)=zeros(1,NS);
