@@ -1,9 +1,9 @@
 # SIGOPT
 Repository for the SIGOPT project 
 
-Allocation and VRP Problem implemented with librjmcmc4j.
+Allocation and VRP problem implemented with librjmcmc4j.
 
 
-Contritors :
+Contributors :
 Oumayama Kaabi
 
