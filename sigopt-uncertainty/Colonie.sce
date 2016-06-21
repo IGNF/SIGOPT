@@ -130,12 +130,10 @@ NbIter=100; //Nombre d'itérations
 xMSA=zeros(NS,NS,N); //Meilleure solution absolue
 yMSA=zeros(NS,NS,N);
 MChA=list();
-Compteur=0;
 X=[];
 
 for n=1:NbIter
     for f=1:K
-        Blocage=0;
         for k=1:N
             Chemin(k)=1;
             while F<>1
@@ -168,7 +166,7 @@ for n=1:NbIter
                     eta(F,NC)=eta(F,NC)/100;
                     if NP<>0
                         tau(NP,NC,F)=(1-rho)*tau(NP,NC,F)+rho*tau0; //Renouvellement local
-                        tau(NC,NP,F)=(1-rho)*tau(NC,NP,F)+rho*tau0;
+                        tau(F,NC,NP)=(1-rho)*tau(F,NC,NP)+rho*tau0;
                     end
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
@@ -199,7 +197,7 @@ for n=1:NbIter
                     eta(F,NC)=eta(F,NC)/100;
                     if NP<>0
                         tau(NP,NC,F)=(1-rho)*tau(NP,NC,F)+rho*tau0; //Renouvellement local
-                        tau(NC,NP,F)=(1-rho)*tau(NC,NP,F)+rho*tau0;
+                        tau(F,NC,NP)=(1-rho)*tau(F,NC,NP)+rho*tau0;
                     end
                     //V(NC)=V(NC)(V(NC)<>F); //Fermeture de l'arc
                     //V(F)=V(F)(V(F)<>NC);
@@ -242,7 +240,7 @@ for n=1:NbIter
         end
         eta=etaA; //Réinitialisation de la visibilité
         q=qA; //Réinitialisation des déchets
-        if Blocage==0 & cout(x,y,c,qA,N)<MC then
+        if cout(x,y,c,qA,N)<MC then
             xMS=x;
             MCh=Chemin;
             yMS=y;
@@ -263,10 +261,12 @@ for n=1:NbIter
     for NN=1:N //Renouvellement global
         for j=2:(length(MChA(NN))-1)
             tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))+rho/MCA;
+            tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))+rho/MCA;
         end
         j=j+1;
         if NN<>N
             tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))+rho/MCA;
+            tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))+rho/MCA;
         end
     end
 end
