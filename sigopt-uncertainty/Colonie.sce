@@ -83,7 +83,8 @@ qA=q;
 a=bool2s(c>0); //Matrice d'adjacence
 CE=300; //Coût étalon (à paramétrer)
 NA=sum(a)/2; //Nombre d'arcs
-tau0=1/(CE*NA);
+//tau0=1/(CE*NA);
+tau0=1;
 aa=zeros(NS,NS,NS);
 for i=1:NS //Matrice de paires d'arcs orientées
     for j=1:NS
@@ -98,13 +99,13 @@ tau=tau0*aa; //Matrice de phéromones
 CV=1/12;
 eta=CV*q; //Matrice de visibilité
 etaA=eta;
-q0=1/8; //Coefficient d'équilibre Intensification/Diversification
+q0=0; //Coefficient d'équilibre Intensification/Diversification
 V=list(); //Voisinages de chaque sommet
 for k=1:NS
     V(k)=find(a(k,:)==1);
 end
 VA=V; //Voisinages absolus
-alpha=1; //Paramètre d'importance des phéromones
+alpha=1/256; //Paramètre d'importance des phéromones
 beta=1; //Paramètre d'importance heuristique
 N=3; //Nombre de tournées
 K=40; //Nombre de fourmis dans la colonie
@@ -131,6 +132,8 @@ xMSA=zeros(NS,NS,N); //Meilleure solution absolue
 yMSA=zeros(NS,NS,N);
 MChA=list();
 X=[];
+Y=[];
+const=30;
 
 for n=1:NbIter
     for f=1:K
@@ -138,11 +141,6 @@ for n=1:NbIter
             Chemin(k)=1;
             while F<>1
                 q1=rand(1,"uniform");
-                if V(NC)==[]
-                    Compteur=Compteur+1;
-                    Blocage=1;
-                    break
-                end
                 for h=V(NC)
                     if NP<>0
                         A(h)=tau(NP,NC,h)^alpha*eta(NC,h)^beta;
@@ -234,9 +232,6 @@ for n=1:NbIter
             F=0;
             NP=0;
             NC=1;
-            if Blocage==1 then
-                break
-            end
         end
         eta=etaA; //Réinitialisation de la visibilité
         q=qA; //Réinitialisation des déchets
@@ -260,13 +255,13 @@ for n=1:NbIter
     X=[X MCA];
     for NN=1:N //Renouvellement global
         for j=2:(length(MChA(NN))-1)
-            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))+rho/MCA;
-            tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))+rho/MCA;
+            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN)(j+1))+rho*const;
+            tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN)(j+1),MChA(NN)(j),MChA(NN)(j-1))+rho*const;
         end
         j=j+1;
         if NN<>N
-            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))+rho/MCA;
-            tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))+rho/MCA;
+            tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))=(1-rho)*tau(MChA(NN)(j-1),MChA(NN)(j),MChA(NN+1)(2))+rho*const;
+            tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))=(1-rho)*tau(MChA(NN+1)(2),MChA(NN)(j),MChA(NN)(j-1))+rho*const;
         end
     end
 end
