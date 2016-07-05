@@ -133,7 +133,10 @@ yMSA=zeros(NS,NS,N);
 MChA=list();
 X=[];
 Y=[];
+Z=[];
 const=30;
+
+d=Dijkstra(a,c,1); //Dijkstra: plus courte distance au dépôt
 
 for n=1:NbIter
     for f=1:K
@@ -151,7 +154,7 @@ for n=1:NbIter
                 if q1<=q0 then //Intensification
                     F=find(A==max(A));
                     F=F(1);
-                    x(NC,F,k)=1;
+                    x(NC,F,k)=x(NC,F,k)+1;
                     Chemin(k)=[Chemin(k) F];
                     if q(NC,F)>0 then
                         y(NC,F,k)=1;
@@ -182,7 +185,7 @@ for n=1:NbIter
                             break
                         end
                     end
-                    x(NC,F,k)=1;
+                    x(NC,F,k)=x(NC,F,k)+1;
                     Chemin(k)=[Chemin(k) F];
                     if q(NC,F)>0 then
                         y(NC,F,k)=1;
@@ -210,8 +213,8 @@ for n=1:NbIter
                         while F<>1
                             NP=NC;
                             NC=F;
-                            F=pred(a,c,NC,1);
-                            x(NC,F,k)=1;
+                            F=pred(a,c,NC,d);
+                            x(NC,F,k)=x(NC,F,k)+1;
                             Chemin(k)=[Chemin(k) F];
                             if q(NC,F)<=C-CC & sum(y(NC,F,:))==0 & sum(y(F,NC,:))==0 then
                                 y(NC,F,k)=1; //Déblayages éventuels sur le retour
@@ -235,6 +238,7 @@ for n=1:NbIter
         end
         eta=etaA; //Réinitialisation de la visibilité
         q=qA; //Réinitialisation des déchets
+        Z=[Z cout(x,y,c,qA,N)];
         if cout(x,y,c,qA,N)<MC then
             xMS=x;
             MCh=Chemin;
