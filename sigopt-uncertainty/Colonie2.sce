@@ -187,20 +187,7 @@ for k=1:N
     CC=0; //Vidage du camion
 end
 
-//Phéromones
-
 L=cout2(X,Y,c,qA);
-tau=rho*tau;
-//for k=1:N
-//    I=find(Y(k)==1);
-//    for h=1:(length(I)-1)
-//        tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))=tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))+100/L;
-//    end
-//end
-
-//Fourmi isolée (pour solution initiale)
-
-//FIXME
 
 //Amélioration de la solution par colonie de fourmis
 
