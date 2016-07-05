@@ -194,8 +194,9 @@ L=cout2(X,Y,c,qA);
 Gachette=0;
 q=qA; //Réinitialisation des déchets
 V=VA; //Réinitialisation des voisins
+Lseuil=120; //Plafond des bonnes solutions
 NC=0; //Noeud courant
-pp=0.01; //Probabilité de diversification
+pp=1; //Probabilité de diversification
 K=3;
 NbIter=500;
 MC=%inf;
@@ -203,6 +204,7 @@ Compteur=0;
 tau=tauA;
 
 for n=1:NbIter
+    pp=0.985*pp;
     X=list();
     Y=list();
     for k=1:N
@@ -352,25 +354,29 @@ for n=1:NbIter
         Lmin1=L(1);
     end
     tau=rho*tau;
-    if L(n)==Lmin then
+    if L(n)<Lmin1 then
+        Compteur=Compteur+1;
+        disp('youhou')
+        disp(Lmin)
         tau=tauA;
+        Xmin=X;
+        Ymin=Y;
+        Lmin1=Lmin;
+    end
         for k=1:N
             I=find(Y(k)==1);
             for h=1:(length(I)-1)
                 //Traces "intra-tournées"
-                tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))=tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))+exp((105-L(n)))*(105-L(n)>=0);
+                tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))=tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
             end
         end
         for k=2:N //Traces "inter-tournées"
             I1=find(Y(k-1)==1);
             I2=find(Y(k)==1);
-            tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))+exp((105-L(n)))*(105-L(n)>=0);
+            tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
         end
-        tau(1,1,X(1)(1),X(1)(2))=tau(1,1,X(1)(1),X(1)(2))+exp((105-L(n)))*(105-L(n)>=0); //Trace sur le tout premier arc
-        Xmin=X;
-        Ymin=Y;
-        Lmin1=Lmin;
-    end
+        tau(1,1,X(1)(1),X(1)(2))=tau(1,1,X(1)(1),X(1)(2))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
+
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
