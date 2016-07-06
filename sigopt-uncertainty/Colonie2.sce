@@ -1,84 +1,9 @@
 //Initialisation du graphe
-c=-1*ones(17,17);
-for k=2:7 //1=dépôt
-    c(1,k)=2;
-end
-for k=2:6
-    c(k,k+1)=2;
-end
-c(2,7)=2;
-c(2,10)=2;
-c(7,10)=2;
-c(7,11)=2;
-c(6,11)=2;
-c(3,8)=2;
-c(4,8)=2;
-c(4,9)=2;
-c(5,9)=2;
-c(8,9)=5;
-c(10,11)=5;
-c(8,12)=2;
-c(3,12)=2;
-c(12,13)=2;
-c(3,13)=2;
-c(2,13)=2;
-c(13,14)=2;
-c(2,14)=2;
-c(10,14)=2;
-c(9,15)=2;
-c(5,15)=2;
-c(15,16)=2;
-c(5,16)=2;
-c(6,16)=2;
-c(16,17)=2;
-c(6,17)=2;
-c(11,17)=2;
-q=zeros(17,17); //Matrices des quantités de déchets
-q(1,2)=15;
-q(1,3)=12;
-q(1,4)=13;
-q(1,5)=13;
-q(1,6)=10;
-q(1,7)=10;
-q(2,3)=13;
-q(3,4)=10;
-q(4,5)=11;
-q(5,6)=14;
-q(6,7)=11;
-q(2,7)=12;
-q(3,8)=14;
-q(5,9)=10;
-q(2,10)=15;
-q(6,11)=11;
-q(4,8)=11;
-q(4,9)=12;
-q(7,11)=12;
-q(7,10)=13;
-q(8,9)=17;
-q(10,11)=16;
-q(8,12)=12;
-q(3,12)=11;
-q(12,13)=10;
-q(3,13)=15;
-q(2,13)=14;
-q(13,14)=11;
-q(2,14)=12;
-q(10,14)=13;
-q(9,15)=10;
-q(5,15)=15;
-q(15,16)=12;
-q(5,16)=14;
-q(6,16)=13;
-q(16,17)=11;
-q(6,17)=10;
-q(11,17)=14;
-NS=17; //Nombre de sommets
-for i=2:NS //Symétrisation
-    for j=1:(i-1)
-        c(i,j)=c(j,i);
-        q(i,j)=q(j,i);
-    end
-end
+save=1
+c=csvRead("/home/mickael/Téléchargements/donnees_test/test_sofiane/matrice_distance.csv",";")
+c=c(2:size(c,1),2:size(c,2))
+q=csvRead("/home/mickael/Téléchargements/donnees_test/test_sofiane/trash_quant.csv",";")
+q=q(2:size(q,1),2:size(q,2))
 qA=q; //Quantités initiales de déchets
 a=bool2s(c>0); //Matrice d'adjacence
 D=Dijkstra(a,c,1); //Distance au dépôt
@@ -380,4 +305,22 @@ for n=1:NbIter
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
+end
+if save==1 then
+    for i=1:size(Xmin)
+        if i ==1 then
+            u = Xmin(i)
+            continue
+        end
+        u=[u,Xmin(i)]
+    end
+    for i=1:size(Ymin)
+         if i ==1 then
+            w = Ymin(i)
+            continue
+        end
+        w=[w,Ymin(i)]
+    end
+    csvWrite(u, "/home/mickael/Téléchargements/donnees_test/test_sofiane/path.csv",";")
+    csvWrite(w, "/home/mickael/Téléchargements/donnees_test/test_sofiane/remove.csv",";")
 end

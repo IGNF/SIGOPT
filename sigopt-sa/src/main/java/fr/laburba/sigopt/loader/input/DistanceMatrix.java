@@ -10,11 +10,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Class that represents distance matrix
+ * 
+ * @author mickaelbrasebin
+ *
+ */
 public class DistanceMatrix {
-
+	
+	//It stores a value for an edge (a couple of node index)
 	private Map<Couple, Double> multiMap = new HashMap<>();
+	//List of all indices
 	private int[] ids;
 
+	/**
+	 * Internal that describes a couple of indices 
+	 * 
+	 * @author mickael brasebin
+	 *
+	 */
 	public class Couple {
 
 		int id1, id2;
@@ -57,7 +71,9 @@ public class DistanceMatrix {
 			return false;
 
 		}
-		
+		/**
+		 * Hashcode is necessary as Couple is used in Hashmap
+		 */
 		@Override
 		public int hashCode(){
 			return this.getId1() + 100000 * this.getId2();
@@ -69,6 +85,11 @@ public class DistanceMatrix {
 		fillMatrix(f);
 	}
 
+	/**
+	 * Method that fills the Matrix from a file
+	 * @param f
+	 * @throws IOException
+	 */
 	public void fillMatrix(File f) throws IOException {
 		// We create a BufferReader
 		InputStream ips = new FileInputStream(f);

@@ -133,13 +133,13 @@ br.close();
 	
 
 
-	//public Point getPoint(int id) {
+	public Point getPoint(int id) {
 
 		// @TODO : compléter pour trouver les bonnes coordonnées
 
-	//	return geomFact.createPoint(new Coordinate(0, 0));
+		return geomFact.createPoint(new Coordinate(0, 0));
 
-	//}
+	}
 
 	
 	
