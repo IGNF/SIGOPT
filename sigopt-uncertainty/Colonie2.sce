@@ -6,6 +6,7 @@ q=csvRead("/home/mickael/Téléchargements/donnees_test/test_sofiane/trash_quant
 q=q(2:size(q,1),2:size(q,2))
 qA=q; //Quantités initiales de déchets
 a=bool2s(c>0); //Matrice d'adjacence
+NA=sum(a); //Nombre d'arcs (orientés)
 D=Dijkstra(a,c,1); //Distance au dépôt
 d=zeros(NS,NS); //distances (coûts)
 for i=1:NS
@@ -32,21 +33,20 @@ VA=V; //Voisinages absolus
 N=3; //Nombre de tournées
 C=170; //Capacité d'un véhicule
 CC=0; //Capacité courante utilisée
-tau=zeros(NS,NS,NS,NS); //Phéromones (entre deux arcs servis consécutivement)
+tau=ones(NA,NA); //Phéromones (entre deux arcs servis consécutivement)
+az=1;
+T=zeros(NS,NS);
 for i=1:NS
     for j=1:NS
-        for k=1:NS
-            for l=1:NS
-                if a(i,j)==1 & a(k,l)==1 then
-                    tau(i,j,k,l)=1;
-                end
-            end
+        if a(i,j)==1 then
+            T(i,j)=az;
+            az=az+1;
         end
     end
 end
-tau(1,1,:,:)=a;
+tau1=a;
 tauA=tau; //Quantité initiale de phéromones
-rho=0.7; //Coefficient d'évaporation
+rho=0.99; //Coefficient d'évaporation
 alpha=1;
 beta=1;
 
@@ -127,6 +127,7 @@ NbIter=500;
 MC=%inf;
 Compteur=0;
 tau=tauA;
+tau1=a;
 
 for n=1:NbIter
     pp=0.985*pp;
@@ -200,21 +201,21 @@ for n=1:NbIter
                 if NC==1 & k==1 then
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau(1,1,1,l)^beta;
+                            A(1,l)=tau1(T(1,l))^beta;
                         end
                     end
                 elseif NC==1 then
                     I1=find(Y(k-1)==1);
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),1,l)^beta;
+                            A(1,l)=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(1,l))^beta;
                         end
                     end
                 end
                 for h=2:NS
                     for l=1:NS
                         if q(h,l)>0 & q(h,l)<=C-CC & a(h,l)==1 & NC<>1 then
-                            A(h,l)=s(NC,h)^alpha*tau(X(k)(length(X(k))-1),NC,h,l)^beta;
+                            A(h,l)=s(NC,h)^alpha*tau(T(X(k)(length(X(k))-1),NC),T(h,l))^beta;
                         end
                     end
                 end
@@ -279,29 +280,28 @@ for n=1:NbIter
         Lmin1=L(1);
     end
     tau=rho*tau;
+    tau1=rho*tau1;
     if L(n)<Lmin1 then
         Compteur=Compteur+1;
-        disp('youhou')
-        disp(Lmin)
         tau=tauA;
+        tau1=a;
         Xmin=X;
         Ymin=Y;
         Lmin1=Lmin;
     end
-        for k=1:N
-            I=find(Y(k)==1);
-            for h=1:(length(I)-1)
-                //Traces "intra-tournées"
-                tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))=tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
-            end
+    for k=1:N
+        I=find(Y(k)==1);
+        for h=1:(length(I)-1)
+            //Traces "intra-tournées"
+            tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))=tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
         end
-        for k=2:N //Traces "inter-tournées"
-            I1=find(Y(k-1)==1);
-            I2=find(Y(k)==1);
-            tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
-        end
-        tau(1,1,X(1)(1),X(1)(2))=tau(1,1,X(1)(1),X(1)(2))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
-
+    end
+    for k=2:N //Traces "inter-tournées"
+        I1=find(Y(k-1)==1);
+        I2=find(Y(k)==1);
+        tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
+    end
+    tau1(T(X(1)(1),X(1)(2)))=tau1(T(X(1)(1),X(1)(2)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
