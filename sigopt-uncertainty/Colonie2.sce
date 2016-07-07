@@ -36,7 +36,7 @@ CC=0; //Capacité courante utilisée
 tau=ones(NA,NA); //Phéromones (entre deux arcs servis consécutivement)
 az=1;
 T=zeros(NS,NS);
-for i=1:NS
+for i=1:NS //Indexation des arcs
     for j=1:NS
         if a(i,j)==1 then
             T(i,j)=az;
@@ -121,7 +121,7 @@ q=qA; //Réinitialisation des déchets
 V=VA; //Réinitialisation des voisins
 Lseuil=120; //Plafond des bonnes solutions
 NC=0; //Noeud courant
-pp=1; //Probabilité de diversification
+pp=0.02; //Probabilité de diversification
 K=3;
 NbIter=500;
 MC=%inf;
@@ -130,7 +130,6 @@ tau=tauA;
 tau1=a;
 
 for n=1:NbIter
-    pp=0.985*pp;
     X=list();
     Y=list();
     for k=1:N
@@ -201,7 +200,7 @@ for n=1:NbIter
                 if NC==1 & k==1 then
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau1(T(1,l))^beta;
+                            A(1,l)=tau1(1,l)^beta;
                         end
                     end
                 elseif NC==1 then
@@ -219,26 +218,27 @@ for n=1:NbIter
                         end
                     end
                 end
-                if CC<=2*C/3 then
+                if CC<=C/4 then
                     for i=V(1)
                         A(i,1)=A(i,1)/10;
                     end
                 end
-                if CC>=C-mean(qA(qA>0)) then
+                if CC>=3*C/4 then
                     for i=V(1)
                         A(i,1)=A(i,1)*10;
                     end
+                end
+                if sum(A)==0 then
+                    CH=pcch(a,c,NC,D);
+                    e=CH(length(CH)-1);
+                    A(e,1)=1;
                 end
                 b=gsort(matrix(A,1,length(A)));
                 b=b(1:K);
                 b=b(b>0);
                 u=rand(1,'uniform');
-                if b==[] then
-                    Gachette=1;
-                    break
-                end
                 b2=cumsum(b)/sum(b);
-                for i=1:5
+                for i=1:length(b)
                     if u<=b2(i) then
                         [km,lm]=find(A==b(i));
                         break
@@ -261,14 +261,6 @@ for n=1:NbIter
             //            pause
         end
         CC=0;
-        if Gachette==1 then //Retour dépôt
-            B=pcch(a,c,NC,D);
-            B=B(B<>NC);
-            B=B';
-            X(k)=[X(k) B];
-            Y(k)=[Y(k) zeros(1,length(B))];
-            Gachette=0;
-        end
         NC=0;
     end
     q=qA;
@@ -302,6 +294,7 @@ for n=1:NbIter
         tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
     end
     tau1(T(X(1)(1),X(1)(2)))=tau1(T(X(1)(1),X(1)(2)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
+    Lseuil=Lmin+10;
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
