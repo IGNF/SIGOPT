@@ -52,7 +52,7 @@ beta=1;
 Gachette=0;
 Lseuil=120; //Plafond des bonnes solutions
 NC=0; //Noeud courant
-pp=0.01; //Probabilité de diversification
+pp=1; //Probabilité de diversification
 K=3;
 NbIter=300;
 Compteur=0;
@@ -67,6 +67,7 @@ Xmin=list();
 Ymin=list();
 
 for n=1:NbIter
+    pp=0.98*pp;
     for pa=1:P
         X(pa)=list();
         Y(pa)=list();
