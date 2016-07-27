@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.vividsolutions.jts.geom.Point;
 
@@ -51,31 +53,52 @@ public class PathExporter {
 
 		IFeatureCollection<IFeature> featC = new FT_FeatureCollection<>();
 		// We get information about path and removed edges
-		String[] tabPath = generatePath(pathFile);
-		String[] tabRemove = null;
+		List<String[]> tabPath = generatePath(pathFile);
+		List<String[]> tabRemove = null;
 		// It is optionnal
 		if (removeFile != null) {
 			tabRemove = generatePath(removeFile);
+			
+			
+			if(tabPath.size() != tabRemove.size()){
+				System.out.println(PathExporter.class.getCanonicalName() + " ERROR NUMBER OF LINE IS DIFFERENT");
+				return;
+			}
+			
 		}
+		
 
-		// We detect if we are at a desposit place if it does not move so we
-		// keep previous id
+		int nbLine = tabPath.size();
+		
+		int count = 0;
+		for(int i=0;i<nbLine;i++){
+			
+			if(tabRemove == null){
+				featC.addAll(generateTour(tabPath.get(i), null, cM, dm, (count++)));
+			}else{
+				featC.addAll(generateTour(tabPath.get(i), tabRemove.get(i), cM, dm, (count++)));
+			}
+		
+		}
+		
+		
+	
+		ShapefileWriter.write(featC, fileOut);
+	}
+	
+	public static IFeatureCollection<IFeature> generateTour(String[] tabPath, String[] tabRemove, CoordinateMatrix cM, DistanceMatrix dm, int count ){
+		
+
+		IFeatureCollection<IFeature> featColl = new FT_FeatureCollection<>();
+		
+		
 		int previousId = Integer.parseInt(tabPath[0]);
 		Point preivousCoord = cM.getPoint(previousId);
-
-		// id for a path section between two desposits
-		int idPathSection = 0;
 
 		// For each id of the point
 		for (int i = 1; i < tabPath.length; i++) {
 			int currentId = Integer.parseInt(tabPath[i]);
 
-			// We are not moving we are at a deposit
-			if (currentId == previousId) {
-				idPathSection++;
-				previousId = currentId;
-				continue;
-			}
 
 			// We get the current coordinates
 			Point currentCoord = cM.getPoint(currentId);
@@ -88,41 +111,56 @@ public class PathExporter {
 
 			// We store the distance
 			Double d = dm.getDistance(currentId, previousId);
+	
+			
+			
 			AttributeManager.addAttribute(feat, NAME_ATT_COST, d, "Double");
 			// PathSectionID
-			AttributeManager.addAttribute(feat, NAME_PATH_SECT_ID, idPathSection, "Integer");
+			AttributeManager.addAttribute(feat, NAME_PATH_SECT_ID, count, "Integer");
 			// We indicate if we remove the trashes
 			if (tabRemove != null) {
 				AttributeManager.addAttribute(feat, NAME_TRASH_REM, Integer.parseInt(tabRemove[i - 1]), "Integer");
 			}
 
-			featC.add(feat);
+			featColl.add(feat);
 			previousId = currentId;
+			preivousCoord = currentCoord;
 		}
 
-		ShapefileWriter.write(featC, fileOut);
+		
+		return featColl;
+		
 	}
+
 	/**
 	 * Just split the filename into a String array
+	 * 
 	 * @param fileName
 	 * @return
 	 * @throws Exception
 	 */
-	private static String[] generatePath(File fileName) throws Exception {
+	private static List<String[]> generatePath(File fileName) throws Exception {
+
+		List<String[]> list = new ArrayList<>();
 
 		InputStream ips = new FileInputStream(fileName);
 		InputStreamReader ipsr = new InputStreamReader(ips);
 		BufferedReader br = new BufferedReader(ipsr);
 
-		String ligne;
-		// First line contains id
-		ligne = br.readLine();
+		String ligne = br.readLine();
 
-		String[] strPath = ligne.split(";");
+		while (ligne != null) {
+
+			String[] strPath = ligne.split(" ");
+
+			list.add(strPath);
+			
+			ligne = br.readLine();
+		}
 
 		br.close();
 
-		return strPath;
+		return list;
 	}
 
 	public static void exportPath(CoordinateMatrix cM, DistanceMatrix dm, File pathFile, String fileOut)

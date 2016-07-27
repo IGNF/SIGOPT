@@ -1,15 +1,18 @@
 package fr.laburba.sigopt.model;
 
-public class Node {
-	
+import fr.ign.cogit.geoxygene.api.spatial.geomprim.IPoint;
+import fr.ign.cogit.geoxygene.spatial.coordgeom.DirectPosition;
+import fr.ign.cogit.geoxygene.spatial.geomprim.GM_Point;
 
-	private double x,y;
-	
+public class Node {
+
+	private double x, y;
+
 	private int id;
 
-	public Node(int id,int c, double x, double y) {
+	public Node(int id, int c, double x, double y) {
 		super();
-	
+
 		this.x = x;
 		this.y = y;
 		this.id = id;
@@ -39,5 +42,8 @@ public class Node {
 		this.y = y;
 	}
 
+	public IPoint toGeometry() {
+		return new GM_Point(new DirectPosition(this.getX(), this.getY()));
+	}
 
 }
