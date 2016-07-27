@@ -99,6 +99,9 @@ public class DistanceMatrix {
 			count++;
 			// On parse la ligne courante
 			String[] tabLineTemp = ligne.split(";");
+			
+			
+			
 
 			// On récupère en int l'ID courant de la ligne
 			String idCurrentRow = tabLineTemp[0];

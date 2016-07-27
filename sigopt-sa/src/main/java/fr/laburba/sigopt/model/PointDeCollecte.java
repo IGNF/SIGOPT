@@ -6,7 +6,7 @@ public class PointDeCollecte extends Node{
 	public int demande;
 
 	public PointDeCollecte(int id, int demande, double x, double y) {
-		super(x,y);
+		super(id,0, x,y);
 		this.id = id;
 		this.demande = demande;
 	}

@@ -7,10 +7,12 @@ public class DepotDeStockage extends Node{
 	public int capacity;
 
 	public DepotDeStockage(int id, int capacity, double x, double y) {
-		super(x,y);
+		super(id,1, x,y);
 		this.id = id;
 		this.capacity = capacity;
 	}
+
+	
 
 	public int getId() {
 		return id;

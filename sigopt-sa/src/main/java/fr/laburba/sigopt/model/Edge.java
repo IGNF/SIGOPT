@@ -1,12 +1,11 @@
 package fr.laburba.sigopt.model;
 
-public class Edge extends Node {
+public class Edge{
 
 	Node nodeIni, nodeEnd;
 	double distance;
 
-	public Edge(double x, double y, Node nodeIni, Node nodeEnd, double distance) {
-		super(x, y);
+	public Edge( Node nodeIni, Node nodeEnd, double distance) {
 		this.nodeIni = nodeIni;
 		this.nodeEnd = nodeEnd;
 		this.distance = distance;
@@ -35,5 +34,6 @@ public class Edge extends Node {
 	public void setDistance(double distance) {
 		this.distance = distance;
 	}
+
 
 }

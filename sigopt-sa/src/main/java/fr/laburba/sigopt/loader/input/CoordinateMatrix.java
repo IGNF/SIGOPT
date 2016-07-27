@@ -7,165 +7,139 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.Point;
 
-import fr.laburba.sigopt.loader.input.DistanceMatrix.Couple;
+import fr.laburba.sigopt.model.DepotDeStockage;
+import fr.laburba.sigopt.model.Node;
+import fr.laburba.sigopt.model.PointDeCollecte;
 
 public class CoordinateMatrix {
 
 	private static GeometryFactory geomFact = new GeometryFactory();
-	
-	
-	
-	private Map<Double,Couple> multiMap = new HashMap<>();
-	private int[]id ;
 
-	public class Couple {
+	private Map<Integer, Node> multiMap = new HashMap<>();
 
-		int x, y;
 
-		public int getX() {
-			return x;
-		}
-
-		public int getY() {
-			return y;
-		}
-
-	
-		public Couple(int x, int y) {
-			this.x = x;
-			this.y = y;
-		}
-
-		@Override
-		public String toString() {
-			return x + " : " + y;
-		}
-
-	}
-	
-	
 	public CoordinateMatrix(File f) throws IOException {
 		fillMatrix(f);
 	}
 
-	
-	
 	public void fillMatrix(File f) throws IOException {
+
 		// We create a BufferReader
 		InputStream ips = new FileInputStream(f);
 		InputStreamReader ipsr = new InputStreamReader(ips);
 		BufferedReader br = new BufferedReader(ipsr);
 
-	// First Row contains id
-	String Line = br.readLine();
-	// On récupère le tableau des identifiants
-	
-	String[] listId =Line.split(";");
+		String Line = br.readLine();
 
-	id = new int[listId.length - 1];
+		// On récupère le tableau des identifiants
 
-	for (int i =0; i < listId.length; i++) {
-		id[i ] = Integer.parseInt(listId[i]);
+		int id = 0;
+		int cat= 1;// catégorie :point de collecte ou dépot de stockage.
+		// On parcourt chaque ligne
+		int indexX = 2;
+		int indexY = 3;
 		
-		
-	}
-	
-				
-//On stocke la taille de ce tableau (car on l'utilise beaucoup)
-			int lengthIdLenght = id.length;
+		while ((Line = br.readLine()) != null) {
 
-			// Compteur qui indique à partir de quelle colonne on regarde
-		int count = 1;
-
-			// On parcourt chaque ligne
-			while ((Line = br.readLine()) != null) {
-				count++;
-				// On parse la ligne courante
+			// On parse la ligne courante
 			String[] tabLineTemp = Line.split(";");
 
-				// On récupère en int l'ID courant de la ligne
-				String idCurrentRow = tabLineTemp[0];
-				int i_idCurrentRow = Integer.parseInt(idCurrentRow);
-
-			for (int i = count; i < lengthIdLenght + 1; i++) {
-					// On récupère l'ID de chaque colonne en entier
-				String idCurrentCol = listId[i];
-					int i_idCurrentCol = Integer.parseInt(idCurrentCol);
+			System.out.println(Arrays.toString(tabLineTemp));
+			
 		
-					
-			}}
+			//On fait un test => si c'est 0 alors on crée un Point de Collecte
+			//Si c'est un on crée un centre de stockage
+			//On ajoute à la hasmap
+			
+if(Integer.parseInt(tabLineTemp[cat])==0){
+	
+	DepotDeStockage d= new DepotDeStockage (Integer.parseInt(tabLineTemp[id]), 0, indexX, indexY);
+	  for (int i =  0; i < tabLineTemp[cat].length(); i++) {
+	System.out.println(d);
+	
+}}
+
+
+		else if (Integer.parseInt(tabLineTemp[cat])==1){
+		PointDeCollecte p= new 	PointDeCollecte  (Integer.parseInt(tabLineTemp[id]),1, indexX, indexY);
+		for (int i =  0; i < tabLineTemp[cat].length(); i++) {
+		System.out.println(p);
+		}
+		}
+
+
+Node n = new Node(Integer.parseInt(tabLineTemp[id]),
+		Integer.parseInt(tabLineTemp[cat]),
+		   
+		  Double.parseDouble(tabLineTemp[indexX]),
+		  Double.parseDouble(tabLineTemp[indexY]));
+
+		multiMap.put(Integer.parseInt(tabLineTemp[id]), n);
+
 		
-				
+		}
+			
 
 
-br.close();
-}	
+		br.close();
+	}
 
-			public int[] getListId() {
-				return id;
-			}
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-				
-		//@TODO : compléter la hashmap avec l'identifiant et les coordonnées
+	public Set<Integer> getListId() {
+		return multiMap.keySet();
+	}
+
+
+
+	public com.vividsolutions.jts.geom.Point getPoint(int id) {
+
+			
+		Node n = multiMap.get(id);
+		
+		if(n == null){
+			return null;
+		}
+		
+
+		return geomFact.createPoint(new Coordinate(n.getX(), n.getY()));
+
+	}
 	
-	
-	
-	
-	
-	
+	public Collection<Node> getListNodes(){
+		return multiMap.values();
+	}
 
-
-	//public Point getPoint(int id) {
-
-		// @TODO : compléter pour trouver les bonnes coordonnées
-
-	//	return geomFact.createPoint(new Coordinate(0, 0));
-
-	//}
-
-	
-	
 	public static void main(String[] args) throws IOException {
+
 		File f = new File(CoordinateMatrix.class.getResource("/data/idf/com_idf_pt_xy.csv").getPath());
 		CoordinateMatrix cM = new CoordinateMatrix(f);
-	
-		/// Liste des identifiants
-		int[] lId = cM.getListId();
-		System.out.println("---------------------------------");
-		for (int i = 0; i < lId.length; i++) {
-			System.out.print(lId[i] + ";");
-	
-	
+
+		
+		  Set<Integer> Lid = cM.getListId();
+		  System.out.println("---------------------------------");
+		  for (int i =  0; i < Lid.size(); i++) {
+		  
+		  System.out.print(Lid.toArray()[i] + ";");
+		  
+		  } System.out.println("");
+		  System.out.println("---------------------------------");
+		  
+		  
+		
+		  com.vividsolutions.jts.geom.Point p = cM.getPoint(92078);
+		  
+		  System.out.println("Les coordnnées du point qui a l'id 92078 sont : " + p);
+		
+		  
+
 	}
-	System.out.println("");
-	System.out.println("---------------------------------");
-	
-	
-	
-	
-	}
-	
-	
+
 }
-
-
-
-	
