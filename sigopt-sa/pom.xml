@@ -1,17 +1,18 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>fr.laburba</groupId>
-  <artifactId>sigopt</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
-  <scm>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>fr.laburba</groupId>
+	<artifactId>sigopt</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<scm>
 		<connection>scm:git:https://github.com/IGNF/sigopt.git</connection>
 		<url>https://github.com/IGNF/sigopt/</url>
 	</scm>
-  <properties>
+	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<librjmcmc4j.version>1.0-SNAPSHOT</librjmcmc4j.version>
 	</properties>
-		<developers>
+	<developers>
 		<developer>
 			<id>okaabi</id>
 			<name>Oumayma Kaabi</name>
@@ -25,8 +26,8 @@
 			</roles>
 		</developer>
 	</developers>
-	
-  <build>
+
+	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<testSourceDirectory>src/test/java</testSourceDirectory>
 		<resources>
@@ -119,9 +120,31 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
+		<repository>
+			<id>cogit-snapshots</id>
+			<name>Cogit Snapshots Repository</name>
+			<url>https://forge-cogit.ign.fr/nexus/content/repositories/snapshots/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>cogit-releases</id>
+			<name>Cogit Releases Repository</name>
+			<url>https://forge-cogit.ign.fr/nexus/content/repositories/releases/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
 	</repositories>
 	<dependencies>
-			<dependency>
+		<dependency>
 			<groupId>fr.ign</groupId>
 			<artifactId>librjmcmc4j-core</artifactId>
 			<version>${librjmcmc4j.version}</version>
@@ -130,6 +153,11 @@
 			<groupId>fr.ign</groupId>
 			<artifactId>librjmcmc4j-geometry</artifactId>
 			<version>${librjmcmc4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>fr.ign.cogit</groupId>
+			<artifactId>geoxygene-sig3d</artifactId>
+			<version>1.8-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 </project>
