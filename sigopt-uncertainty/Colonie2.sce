@@ -1,86 +1,12 @@
 //Initialisation du graphe
-c=-1*ones(17,17);
-for k=2:7 //1=dépôt
-    c(1,k)=2;
-end
-for k=2:6
-    c(k,k+1)=2;
-end
-c(2,7)=2;
-c(2,10)=2;
-c(7,10)=2;
-c(7,11)=2;
-c(6,11)=2;
-c(3,8)=2;
-c(4,8)=2;
-c(4,9)=2;
-c(5,9)=2;
-c(8,9)=5;
-c(10,11)=5;
-c(8,12)=2;
-c(3,12)=2;
-c(12,13)=2;
-c(3,13)=2;
-c(2,13)=2;
-c(13,14)=2;
-c(2,14)=2;
-c(10,14)=2;
-c(9,15)=2;
-c(5,15)=2;
-c(15,16)=2;
-c(5,16)=2;
-c(6,16)=2;
-c(16,17)=2;
-c(6,17)=2;
-c(11,17)=2;
-q=zeros(17,17); //Matrices des quantités de déchets
-q(1,2)=15;
-q(1,3)=12;
-q(1,4)=13;
-q(1,5)=13;
-q(1,6)=10;
-q(1,7)=10;
-q(2,3)=13;
-q(3,4)=10;
-q(4,5)=11;
-q(5,6)=14;
-q(6,7)=11;
-q(2,7)=12;
-q(3,8)=14;
-q(5,9)=10;
-q(2,10)=15;
-q(6,11)=11;
-q(4,8)=11;
-q(4,9)=12;
-q(7,11)=12;
-q(7,10)=13;
-q(8,9)=17;
-q(10,11)=16;
-q(8,12)=12;
-q(3,12)=11;
-q(12,13)=10;
-q(3,13)=15;
-q(2,13)=14;
-q(13,14)=11;
-q(2,14)=12;
-q(10,14)=13;
-q(9,15)=10;
-q(5,15)=15;
-q(15,16)=12;
-q(5,16)=14;
-q(6,16)=13;
-q(16,17)=11;
-q(6,17)=10;
-q(11,17)=14;
-NS=17; //Nombre de sommets
-for i=2:NS //Symétrisation
-    for j=1:(i-1)
-        c(i,j)=c(j,i);
-        q(i,j)=q(j,i);
-    end
-end
+save=1
+c=csvRead("/home/mickael/Téléchargements/donnees_test/test_sofiane/matrice_distance.csv",";")
+c=c(2:size(c,1),2:size(c,2))
+q=csvRead("/home/mickael/Téléchargements/donnees_test/test_sofiane/trash_quant.csv",";")
+q=q(2:size(q,1),2:size(q,2))
 qA=q; //Quantités initiales de déchets
 a=bool2s(c>0); //Matrice d'adjacence
+NA=sum(a); //Nombre d'arcs (orientés)
 D=Dijkstra(a,c,1); //Distance au dépôt
 d=zeros(NS,NS); //distances (coûts)
 for i=1:NS
@@ -107,21 +33,20 @@ VA=V; //Voisinages absolus
 N=3; //Nombre de tournées
 C=170; //Capacité d'un véhicule
 CC=0; //Capacité courante utilisée
-tau=zeros(NS,NS,NS,NS); //Phéromones (entre deux arcs servis consécutivement)
-for i=1:NS
+tau=ones(NA,NA); //Phéromones (entre deux arcs servis consécutivement)
+az=1;
+T=zeros(NS,NS);
+for i=1:NS //Indexation des arcs
     for j=1:NS
-        for k=1:NS
-            for l=1:NS
-                if a(i,j)==1 & a(k,l)==1 then
-                    tau(i,j,k,l)=1;
-                end
-            end
+        if a(i,j)==1 then
+            T(i,j)=az;
+            az=az+1;
         end
     end
 end
-tau(1,1,:,:)=a;
+tau1=a;
 tauA=tau; //Quantité initiale de phéromones
-rho=0.7; //Coefficient d'évaporation
+rho=0.99; //Coefficient d'évaporation
 alpha=1;
 beta=1;
 
@@ -196,15 +121,15 @@ q=qA; //Réinitialisation des déchets
 V=VA; //Réinitialisation des voisins
 Lseuil=120; //Plafond des bonnes solutions
 NC=0; //Noeud courant
-pp=1; //Probabilité de diversification
+pp=0.02; //Probabilité de diversification
 K=3;
 NbIter=500;
 MC=%inf;
 Compteur=0;
 tau=tauA;
+tau1=a;
 
 for n=1:NbIter
-    pp=0.985*pp;
     X=list();
     Y=list();
     for k=1:N
@@ -275,44 +200,45 @@ for n=1:NbIter
                 if NC==1 & k==1 then
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau(1,1,1,l)^beta;
+                            A(1,l)=tau1(1,l)^beta;
                         end
                     end
                 elseif NC==1 then
                     I1=find(Y(k-1)==1);
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),1,l)^beta;
+                            A(1,l)=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(1,l))^beta;
                         end
                     end
                 end
                 for h=2:NS
                     for l=1:NS
                         if q(h,l)>0 & q(h,l)<=C-CC & a(h,l)==1 & NC<>1 then
-                            A(h,l)=s(NC,h)^alpha*tau(X(k)(length(X(k))-1),NC,h,l)^beta;
+                            A(h,l)=s(NC,h)^alpha*tau(T(X(k)(length(X(k))-1),NC),T(h,l))^beta;
                         end
                     end
                 end
-                if CC<=2*C/3 then
+                if CC<=C/4 then
                     for i=V(1)
                         A(i,1)=A(i,1)/10;
                     end
                 end
-                if CC>=C-mean(qA(qA>0)) then
+                if CC>=3*C/4 then
                     for i=V(1)
                         A(i,1)=A(i,1)*10;
                     end
+                end
+                if sum(A)==0 then
+                    CH=pcch(a,c,NC,D);
+                    e=CH(length(CH)-1);
+                    A(e,1)=1;
                 end
                 b=gsort(matrix(A,1,length(A)));
                 b=b(1:K);
                 b=b(b>0);
                 u=rand(1,'uniform');
-                if b==[] then
-                    Gachette=1;
-                    break
-                end
                 b2=cumsum(b)/sum(b);
-                for i=1:5
+                for i=1:length(b)
                     if u<=b2(i) then
                         [km,lm]=find(A==b(i));
                         break
@@ -335,14 +261,6 @@ for n=1:NbIter
             //            pause
         end
         CC=0;
-        if Gachette==1 then //Retour dépôt
-            B=pcch(a,c,NC,D);
-            B=B(B<>NC);
-            B=B';
-            X(k)=[X(k) B];
-            Y(k)=[Y(k) zeros(1,length(B))];
-            Gachette=0;
-        end
         NC=0;
     end
     q=qA;
@@ -354,30 +272,48 @@ for n=1:NbIter
         Lmin1=L(1);
     end
     tau=rho*tau;
+    tau1=rho*tau1;
     if L(n)<Lmin1 then
         Compteur=Compteur+1;
-        disp('youhou')
-        disp(Lmin)
         tau=tauA;
+        tau1=a;
         Xmin=X;
         Ymin=Y;
         Lmin1=Lmin;
     end
-        for k=1:N
-            I=find(Y(k)==1);
-            for h=1:(length(I)-1)
-                //Traces "intra-tournées"
-                tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))=tau(X(k)(I(h)),X(k)(I(h)+1),X(k)(I(h+1)),X(k)(I(h+1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
-            end
+    for k=1:N
+        I=find(Y(k)==1);
+        for h=1:(length(I)-1)
+            //Traces "intra-tournées"
+            tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))=tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
         end
-        for k=2:N //Traces "inter-tournées"
-            I1=find(Y(k-1)==1);
-            I2=find(Y(k)==1);
-            tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))=tau(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1),X(k)(I2(1)),X(k)(I2(1)+1))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
-        end
-        tau(1,1,X(1)(1),X(1)(2))=tau(1,1,X(1)(1),X(1)(2))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
-
+    end
+    for k=2:N //Traces "inter-tournées"
+        I1=find(Y(k-1)==1);
+        I2=find(Y(k)==1);
+        tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
+    end
+    tau1(T(X(1)(1),X(1)(2)))=tau1(T(X(1)(1),X(1)(2)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
+    Lseuil=Lmin+10;
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
+end
+if save==1 then
+    for i=1:size(Xmin)
+        if i ==1 then
+            u = Xmin(i)
+            continue
+        end
+        u=[u,Xmin(i)]
+    end
+    for i=1:size(Ymin)
+         if i ==1 then
+            w = Ymin(i)
+            continue
+        end
+        w=[w,Ymin(i)]
+    end
+    csvWrite(u, "/home/mickael/Téléchargements/donnees_test/test_sofiane/path.csv",";")
+    csvWrite(w, "/home/mickael/Téléchargements/donnees_test/test_sofiane/remove.csv",";")
 end

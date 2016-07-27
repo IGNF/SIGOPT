@@ -90,12 +90,15 @@ Node n = new Node(Integer.parseInt(tabLineTemp[id]),
 			
 
 
+
 		br.close();
 	}
+
 
 	public Set<Integer> getListId() {
 		return multiMap.keySet();
 	}
+
 
 
 
