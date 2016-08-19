@@ -47,18 +47,18 @@ function p=pred2(a,c,h,ref)
     end
 endfunction
 
-//Plus court chemin de h vers 1
-function [CH]=pcch(a,c,h,d)
+//Plus court chemin de h vers ref
+function [CH]=pcch(a,c,h,d,ref)
     CH(1)=h;
     i=1;
-    while CH(i)<>1
+    while CH(i)<>ref
         i=i+1;
         CH(i)=pred(a,c,CH(i-1),d);
     end
-    CH(i)=1;
+    CH(i)=ref;
 endfunction
 
-//Plus court chemin de h vers ref
+//Plus court chemin de h vers ref (coûteux)
 function [CH]=pcch2(a,c,h,ref)
     CH(1)=h;
     i=1;
@@ -69,7 +69,7 @@ function [CH]=pcch2(a,c,h,ref)
     CH(i)=ref;
 endfunction
 
-//Coût d'une solution
+//Coût d'une solution (obsolète)
 function F=cout(x,y,c,q,N)
     lambda=1;
     gamma=1; //Paramètres d'importances relatives des distances et des déchets
@@ -87,7 +87,7 @@ endfunction
 //Coût d'une solution (avec le chemin en entrée) pour Colonie2
 function G=cout2(X,Y,c,q)
     lambda=1;
-    gamma=1;
+    gamma=4/mean(q);
     A=0;
     B=sum(q)/2;
     for k=1:size(X)
@@ -101,15 +101,31 @@ function G=cout2(X,Y,c,q)
     G=lambda*A+gamma*B;
 endfunction
 
-//Coût pour le CARP traditionnel
-function C=coutcarp(x,y,c,q,N)
-    ad=a.*bool2s(q>0);
-    Y=sum((1-sum(y,3)).*ad);
-    if Y>0 then
-        Y=%inf;
+//Une solution est-elle admissible?
+function Rep=IsSolution(X,Y,q)
+    B=sum(q)/2;
+    for k=1:size(X)
+        for h=1:length(Y(k))
+            if Y(k)(h)==1 then
+                B=B-q(X(k)(h),X(k)(h+1));
+            end
+        end
     end
-    x=sum(x,3);
-    C=sum(x.*c)+Y;
+    if B==0 then
+        Rep=1;
+    else
+        Rep=0;
+    end
+endfunction
+
+//Coût pour le CARP traditionnel
+function C=coutcarp(X,Y,c,q)
+    C=0;
+    for k=1:size(X)
+        for h=1:length(Y(k))
+            C=C+c(X(k)(h),X(k)(h+1));
+        end
+    end
 endfunction
 
 //Parcours d'un hypercube de dimension n (centré en 0 et de rayon 1)
@@ -145,5 +161,61 @@ function ind=GIinv(k,n,l)
     ind=l(1);
     for i=1:(k-1)
         ind=ind+(l(i+1)-1)*n^i;
+    end
+endfunction
+
+//Stratégie de modification/réparation
+function [MS1,MS2]=modif(a,SE,X,Y) //Entrées: Matrice d'adjacence initiale, sommets engloutis, tournée à réparer et vecteur des déblayages
+    NS=size(a,1);
+    for h=SE //Nouvelle matrice d'adjacence
+        a(h,:)=zeros(1,NS);
+        a(:,h)=zeros(NS,1);
+    end
+    for k=1:size(X)
+        for b=2:(length(Y(k))-1)
+            if sum(X(k)(b)==SE)>=1 | sum(X(k)(b+1)==SE)>=1 then
+                Y(k)(b)=2;
+            end
+        end
+        Y(k)=Y(k)(Y(k)<>2);
+        for h=SE
+            X(k)=X(k)(X(k)<>h);
+        end
+        L=length(X(k));
+        L2=length(Y(k));
+        for i=1:(L-1)
+            if a(X(k)(i),X(k)(i+1))==0 then
+                l=length(pcch2(a,c,X(k)(i),X(k)(i+1)))-2;
+                for h=0:(L-i-1)
+                    X(k)(L+l-h)=X(k)(L-h);
+                end
+                for h=0:(L2-i)
+                    Y(k)(L2+l+1-h)=Y(k)(L2-h);
+                end
+                X(k)(i:(i+l+1))=pcch2(a,c,X(k)(i),X(k)(i+l+1))';
+                Y(k)(i:(i+l))=zeros(1,l+1);
+            end
+        end
+    end
+    MS1=X;
+    MS2=Y;
+endfunction
+
+//Cout d'une solution pour Colonie3
+function C=cout3(L,arc,d)
+    C=0;
+    i=1;
+    while L(i)<>[]
+        C=C+d(arc(L(i))(1),arc(L(i))(2));
+        if L(i+1)<>"retour" & L(i+1)<>[] then
+            C=C+d(arc(L(i))(2),arc(L(i+1))(1));
+            i=i+1;
+        elseif L(i+1)=="retour" & L(i+2)<>[] & L(i+2)<>"retour" then
+            C=C+d(arc(L(i))(2),1)+d(1,arc(L(i+2))(1));
+            i=i+2;
+        elseif L(i+1)=="retour" & L(i+2)==[] then
+            C=C+d(arc(L(i))(2),1);
+            i=i+1;
+        end
     end
 endfunction
