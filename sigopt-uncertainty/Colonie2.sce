@@ -7,17 +7,32 @@ q=q(2:size(q,1),2:size(q,2))
 qA=q; //Quantités initiales de déchets
 a=bool2s(c>0); //Matrice d'adjacence
 NA=sum(a); //Nombre d'arcs (orientés)
-D=Dijkstra(a,c,1); //Distance au dépôt
+D=list();
+for i=1:NS
+    D(i)=Dijkstra(a,c,i);
+end
+
 d=zeros(NS,NS); //distances (coûts)
 for i=1:NS
     for j=(i+1):NS
-        CH=pcch2(a,c,i,j);
+        CH=pcch(a,c,i,D(j),j);
         for h=1:(length(CH)-1)
             d(i,j)=d(i,j)+c(CH(h),CH(h+1));
             d(j,i)=d(j,i)+c(CH(h),CH(h+1));
         end
     end
 end
+
+PCCH=list();
+for i=1:NS
+    PCCH(i)=list();
+end
+for i=1:NS
+    for j=1:NS
+        PCCH(i)(j)=pcch(a,c,i,D(j),j);
+    end
+end
+
 Md=max(d);
 s=zeros(NS,NS); //Mesure d'économie de déplacement
 for i=1:NS
@@ -46,7 +61,7 @@ for i=1:NS //Indexation des arcs
 end
 tau1=a;
 tauA=tau; //Quantité initiale de phéromones
-rho=0.99; //Coefficient d'évaporation
+rho=0.98; //Coefficient d'évaporation
 alpha=1;
 beta=1;
 
@@ -121,15 +136,18 @@ q=qA; //Réinitialisation des déchets
 V=VA; //Réinitialisation des voisins
 Lseuil=120; //Plafond des bonnes solutions
 NC=0; //Noeud courant
-pp=0.02; //Probabilité de diversification
+pp=1; //Probabilité de diversification
 K=3;
 NbIter=500;
 MC=%inf;
 Compteur=0;
 tau=tauA;
 tau1=a;
+L3=ones(1,NbIter);
+Lminsol=%inf;
 
 for n=1:NbIter
+    pp=0.99*pp;
     X=list();
     Y=list();
     for k=1:N
@@ -144,15 +162,16 @@ for n=1:NbIter
             end
             if p<=pp then //Diversification
                 A=zeros(NS,NS);
-                if NC==1 then
+                if length(X(k))==1 then
                     for l=2:NS
                         A(1,l)=q(1,l);
                     end
-                end
-                for h=2:NS
-                    for l=1:NS
-                        if q(h,l)<=C-CC then
-                            A(h,l)=q(h,l)*s(NC,h);
+                else
+                    for h=1:NS
+                        for l=1:NS
+                            if q(h,l)<=C-CC then
+                                A(h,l)=q(h,l)*s(NC,h);
+                            end
                         end
                     end
                 end
@@ -167,8 +186,13 @@ for n=1:NbIter
                     end
                 end
                 if sum(A)==0 then
-                    CH=pcch(a,c,NC,D);
-                    e=CH(length(CH)-1);
+                    Gachette=1;
+                    CH=PCCH(NC)(1);
+                    if length(CH)>=2 then
+                        e=CH(length(CH)-1);
+                    else
+                        break
+                    end
                     A(e,1)=1;
                 end
                 b=gsort(matrix(A,1,length(A)));
@@ -186,35 +210,46 @@ for n=1:NbIter
                 km=km(g);
                 lm=lm(g);
 //                pause
-                B=pcch2(a,c,NC,km);
+                B=PCCH(NC)(km);
                 B=B(B<>NC);
                 B=B';
                 X(k)=[X(k) B lm];
-                Y(k)=[Y(k) zeros(1,length(B)) 1];
+                if Gachette==0 then
+                    Y(k)=[Y(k) zeros(1,length(B)) 1];
+                else
+                    Y(k)=[Y(k) zeros(1,length(B)) 0];
+                end
                 CC=CC+q(km,lm);
                 q(km,lm)=0;
                 q(lm,km)=0;
                 NC=lm;
             else //Intensification
                 A=zeros(NS,NS);
-                if NC==1 & k==1 then
+                if NC==1 & length(X(k))==1 & k==1 then
                     for l=2:NS
                         if q(1,l)>0 & a(1,l)==1 then
                             A(1,l)=tau1(1,l)^beta;
                         end
                     end
-                elseif NC==1 then
+                elseif NC==1 & length(X(k))==1 then
                     I1=find(Y(k-1)==1);
-                    for l=2:NS
-                        if q(1,l)>0 & a(1,l)==1 then
-                            A(1,l)=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(1,l))^beta;
+                    for h=1:NS
+                        for l=1:NS
+                            if q(h,l)>0 & a(h,l)==1 then
+                                if I1<>[] then
+                                    A(h,l)=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(h,l))^beta;
+                                else
+                                    A(h,l)=1;
+                                end
+                            end
                         end
                     end
-                end
-                for h=2:NS
-                    for l=1:NS
-                        if q(h,l)>0 & q(h,l)<=C-CC & a(h,l)==1 & NC<>1 then
-                            A(h,l)=s(NC,h)^alpha*tau(T(X(k)(length(X(k))-1),NC),T(h,l))^beta;
+                else
+                    for h=1:NS
+                        for l=1:NS
+                            if q(h,l)>0 & q(h,l)<=C-CC & a(h,l)==1 & NC<>1 then
+                                A(h,l)=s(NC,h)^alpha*tau(T(X(k)(length(X(k))-1),NC),T(h,l))^beta;
+                            end
                         end
                     end
                 end
@@ -229,8 +264,13 @@ for n=1:NbIter
                     end
                 end
                 if sum(A)==0 then
-                    CH=pcch(a,c,NC,D);
-                    e=CH(length(CH)-1);
+                    Gachette=1;
+                    CH=PCCH(NC)(1);
+                    if length(CH)>=2 then
+                        e=CH(length(CH)-1);
+                    else
+                        break
+                    end
                     A(e,1)=1;
                 end
                 b=gsort(matrix(A,1,length(A)));
@@ -247,18 +287,30 @@ for n=1:NbIter
                 g=grand(1,"uin",1,length(km));
                 km=km(g);
                 lm=lm(g);
-//                pause
-                B=pcch2(a,c,NC,km);
+//                                pause
+                B=PCCH(NC)(km);
                 B=B(B<>NC);
                 B=B';
                 X(k)=[X(k) B lm];
-                Y(k)=[Y(k) zeros(1,length(B)) 1];
+                if Gachette==0 then
+                    Y(k)=[Y(k) zeros(1,length(B)) 1];
+                else
+                    Y(k)=[Y(k) zeros(1,length(B)) 0];
+                end
                 CC=CC+q(km,lm);
                 q(km,lm)=0;
                 q(lm,km)=0;
                 NC=lm;
             end
+            Gachette=0;
             //            pause
+        end
+        if NC<>1 then
+            B=PCCH(NC)(1);
+            B=B(B<>NC);
+            B=B';
+            X(k)=[X(k) B];
+            Y(k)=[Y(k) zeros(1,length(B))];
         end
         CC=0;
         NC=0;
@@ -266,6 +318,12 @@ for n=1:NbIter
     q=qA;
     L(n)=cout2(X,Y,c,qA);
     Lmin=min(L);
+    L3(n)=coutcarp(X,Y,c,q);
+    if IsSolution(X,Y,qA)==1 & L3(n)<Lminsol then
+        Xminsol=X;
+        Yminsol=Y;
+        Lminsol=L3(n);
+    end
     if n==1 then
         Xmin=X;
         Ymin=Y;
@@ -274,13 +332,14 @@ for n=1:NbIter
     tau=rho*tau;
     tau1=rho*tau1;
     if L(n)<Lmin1 then
-        Compteur=Compteur+1;
         tau=tauA;
         tau1=a;
         Xmin=X;
         Ymin=Y;
         Lmin1=Lmin;
     end
+    if IsSolution(X,Y,qA)==1 then //test
+        Compteur=Compteur+1;
     for k=1:N
         I=find(Y(k)==1);
         for h=1:(length(I)-1)
@@ -291,10 +350,14 @@ for n=1:NbIter
     for k=2:N //Traces "inter-tournées"
         I1=find(Y(k-1)==1);
         I2=find(Y(k)==1);
+        if I2==[] | I1==[] then
+            continue
+        end
         tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
     end
-    tau1(T(X(1)(1),X(1)(2)))=tau1(T(X(1)(1),X(1)(2)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
-    Lseuil=Lmin+10;
+    tau1(X(1)(1),X(1)(2))=tau1(X(1)(1),X(1)(2))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
+    end //test
+    Lseuil=Lmin*1.2;
 end
 for i=1:NbIter
     L2(i)=mean(L(i:NbIter));
