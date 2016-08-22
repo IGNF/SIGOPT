@@ -1,7 +1,10 @@
-
+tic()
 q2A=q2; //Quantités initiales de déchets
 NA=sum(a); //Nombre d'arcs (orientés)
-D=Dijkstra(a,c,1); //Distance au dépôt
+D=list();
+for i=1:NS
+    D(i)=Dijkstra(a,c,i); //Distances entre les sommets
+end
 d=zeros(NS,NS); //distances (coûts)
 for i=1:NS
     for j=(i+1):NS
@@ -50,7 +53,7 @@ beta=1;
 //Colonie de fourmis intrusive
 
 Gachette=0;
-Lseuil=120; //Plafond des bonnes solutions
+Lseuil=110; //Plafond des bonnes solutions
 NC=0; //Noeud courant
 pp=1; //Probabilité de diversification
 K=3;
@@ -81,7 +84,6 @@ for n=1:NbIter
                 if NC==0 then
                     NC=1;
                 end
-                
                 if p<=pp then //Diversification
                     A=zeros(NS,NS);
                     if NC==1 then
@@ -107,7 +109,7 @@ for n=1:NbIter
                         end
                     end
                     if sum(A)==0 then
-                        CH=pcch(a,c,NC,D);
+                        CH=pcch(a,c,NC,D(1),1);
                         if length(CH)>1 then
                             e=CH(length(CH)-1);
                         else
@@ -129,7 +131,7 @@ for n=1:NbIter
                     g=grand(1,"uin",1,length(km));
                     km=km(g);
                     lm=lm(g);
-                    B=pcch2(a,c,NC,km);
+                    B=pcch(a,c,NC,D(km),km);
                     B=B(B<>NC);
                     B=B';
                     X(pa)(k)=[X(pa)(k) B lm];
@@ -172,7 +174,7 @@ for n=1:NbIter
                         end
                     end
                     if sum(A)==0 then
-                        CH=pcch(a,c,NC,D);
+                        CH=pcch(a,c,NC,D(1),1);
                         if length(CH)>1 then
                             e=CH(length(CH)-1);
                         else
@@ -194,7 +196,7 @@ for n=1:NbIter
                     g=grand(1,"uin",1,length(km));
                     km=km(g);
                     lm=lm(g);
-                    B=pcch2(a,c,NC,km);
+                    B=pcch(a,c,NC,D(km),km);
                     B=B(B<>NC);
                     B=B';
                     X(pa)(k)=[X(pa)(k) B lm];
@@ -232,7 +234,7 @@ for n=1:NbIter
             I=find(Y(pa)(k)==1);
             for h=1:(length(I)-1) //Traces "intra-tournées"
                 tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
-                for v=VP(pa)
+                for v=VP(pa)(1)
                     tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
                 end
             end
@@ -242,17 +244,43 @@ for n=1:NbIter
             I2=find(Y(pa)(k)==1);
             if I1<>[] & I2<>[] then
                 tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
-                for v=VP(pa)
+                for v=VP(pa)(1)
                     tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
                 end
             end
         end
         if length(X(pa)(1))>1 then
-            tau1(T(X(pa)(1)(1),X(pa)(1)(2)),pa)=tau1(T(X(pa)(1)(1),X(pa)(1)(2)),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0); //Trace sur le tout premier arc
-            for v=VP(pa)
-                tau1(T(X(pa)(1)(1),X(pa)(1)(2)),v)=tau1(T(X(pa)(1)(1),X(pa)(1)(2)),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+            tau1(X(pa)(1)(1),X(pa)(1)(2),pa)=tau1(X(pa)(1)(1),X(pa)(1)(2),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0); //Trace sur le tout premier arc
+            for v=VP(pa)(1)
+                tau1(X(pa)(1)(1),X(pa)(1)(2),v)=tau1(X(pa)(1)(1),X(pa)(1)(2),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
             end
         end
     end
     q2=q2A;
 end
+
+//Opérateur de réparation
+//Réalisations
+ks=[25 35]; //Shape parameters
+mu=[6 7]; //Moyennes
+Beta=ks./mu; //Rate parameters
+xi(1)=grand(1,1,'gam',ks(1),Beta(1));
+xi(2)=grand(1,1,'gam',ks(2),Beta(2));
+hcrue=2.1;
+SE=1:NS;
+SE=SE(alt(SE)<=hcrue);
+A=zeros(1,pa);
+for pa=1:P
+    A(pa)=norm([xi(1),xi(2)]-G(pa),2);
+end
+I=find(A==min(A));
+I=I(1);
+xib=zeros(1,NPE);
+for h=1:NPE
+    xib(h)=G(I)(h);
+end
+Xsol=Xmin(I);
+Ysol=Ymin(I);
+[Xsol,Ysol]=modif(a,SE,Xsol,Ysol);
+
+t=toc();
