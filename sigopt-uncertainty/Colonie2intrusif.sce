@@ -5,16 +5,28 @@ D=list();
 for i=1:NS
     D(i)=Dijkstra(a,c,i); //Distances entre les sommets
 end
+
 d=zeros(NS,NS); //distances (coûts)
 for i=1:NS
     for j=(i+1):NS
-        CH=pcch2(a,c,i,j);
+        CH=pcch(a,c,i,D(j),j);
         for h=1:(length(CH)-1)
             d(i,j)=d(i,j)+c(CH(h),CH(h+1));
             d(j,i)=d(j,i)+c(CH(h),CH(h+1));
         end
     end
 end
+
+PCCH=list();
+for i=1:NS
+    PCCH(i)=list();
+end
+for i=1:NS
+    for j=1:NS
+        PCCH(i)(j)=pcch(a,c,i,D(j),j);
+    end
+end
+
 s=zeros(NS,NS); //Mesure d'économie de déplacement
 for i=1:NS
     for j=1:NS
@@ -53,7 +65,7 @@ beta=1;
 //Colonie de fourmis intrusive
 
 Gachette=0;
-Lseuil=110; //Plafond des bonnes solutions
+Lseuil=110*ones(1,P); //Plafond des bonnes solutions
 NC=0; //Noeud courant
 pp=1; //Probabilité de diversification
 K=3;
@@ -68,9 +80,12 @@ X=list();
 Y=list();
 Xmin=list();
 Ymin=list();
+t1=zeros(1,NbIter);
+t2=zeros(1,NbIter);
+pe=0.01^(1/300);
 
 for n=1:NbIter
-    pp=0.98*pp;
+    pp=pe*pp;
     for pa=1:P
         X(pa)=list();
         Y(pa)=list();
@@ -86,15 +101,16 @@ for n=1:NbIter
                 end
                 if p<=pp then //Diversification
                     A=zeros(NS,NS);
-                    if NC==1 then
+                    if length(X(pa)(k))==1 then
                         for l=2:NS
                             A(1,l)=q2(1,l,pa);
                         end
-                    end
-                    for h=2:NS
-                        for l=1:NS
-                            if q2(h,l,pa)<=C-CC then
-                                A(h,l)=q2(h,l,pa)*s(NC,h);
+                    else
+                        for h=1:NS
+                            for l=1:NS
+                                if q2(h,l,pa)<=C-CC then
+                                    A(h,l)=q2(h,l,pa)*s(NC,h);
+                                end
                             end
                         end
                     end
@@ -103,14 +119,15 @@ for n=1:NbIter
                             A(i,1)=A(i,1)/10;
                         end
                     end
-                    if CC>=3*CC/4 then
+                    if CC>=3*C/4 then
                         for i=V(1)
                             A(i,1)=A(i,1)*10;
                         end
                     end
                     if sum(A)==0 then
-                        CH=pcch(a,c,NC,D(1),1);
-                        if length(CH)>1 then
+                        Gachette=1;
+                        CH=PCCH(NC)(1);
+                        if length(CH)>=2 then
                             e=CH(length(CH)-1);
                         else
                             break
@@ -131,35 +148,49 @@ for n=1:NbIter
                     g=grand(1,"uin",1,length(km));
                     km=km(g);
                     lm=lm(g);
-                    B=pcch(a,c,NC,D(km),km);
+//                    if n>=50 & pa==1 then
+//                        pause
+//                    end
+                    B=PCCH(NC)(km);
                     B=B(B<>NC);
                     B=B';
                     X(pa)(k)=[X(pa)(k) B lm];
-                    Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 1];
+                    if Gachette==0 then
+                        Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 1];
+                    else
+                        Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 0];
+                    end
                     CC=CC+q2(km,lm,pa);
                     q2(km,lm,pa)=0;
                     q2(lm,km,pa)=0;
                     NC=lm;
                 else //Intensification
                     A=zeros(NS,NS);
-                    if NC==1 & k==1 then
+                    if NC==1 & length(X(pa)(k))==1 & k==1 then
                         for l=2:NS
                             if q2(1,l,pa)>0 & a(1,l)==1 then
                                 A(1,l)=tau1(1,l,pa)^beta;
                             end
                         end
-                    elseif NC==1 then
+                    elseif NC==1 & length(X(pa)(k))==1 then
                         I1=find(Y(pa)(k-1)==1);
-                        for l=2:NS
-                            if q2(1,l,pa)>0 & a(1,l)==1 then
-                                A(1,l)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(1,l),pa)^beta;
+                        for h=1:NS
+                            for l=1:NS
+                                if q2(h,l,pa)>0 & a(h,l)==1 then
+                                    if I1<>[] then
+                                        A(h,l)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(h,l),pa)^beta;
+                                    else
+                                        A(h,l)=1;
+                                    end
+                                end
                             end
                         end
-                    end
-                    for h=2:NS
-                        for l=1:NS
-                            if q2(h,l,pa)>0 & q2(h,l,pa)<=C-CC & a(h,l)==1 & NC<>1 then
-                                A(h,l)=s(NC,h)^alpha*tau(T(X(pa)(k)(length(X(pa)(k))-1),NC),T(h,l),pa)^beta;
+                    else
+                        for h=1:NS
+                            for l=1:NS
+                                if q2(h,l,pa)>0 & q2(h,l,pa)<=C-CC & a(h,l)==1 & NC<>1 then
+                                    A(h,l)=s(NC,h)^alpha*tau(T(X(pa)(k)(length(X(pa)(k))-1),NC),T(h,l),pa)^beta;
+                                end
                             end
                         end
                     end
@@ -174,8 +205,9 @@ for n=1:NbIter
                         end
                     end
                     if sum(A)==0 then
-                        CH=pcch(a,c,NC,D(1),1);
-                        if length(CH)>1 then
+                        Gachette=1;
+                        CH=PCCH(NC)(1);
+                        if length(CH)>=2 then
                             e=CH(length(CH)-1);
                         else
                             break
@@ -188,7 +220,7 @@ for n=1:NbIter
                     u=rand(1,'uniform');
                     b2=cumsum(b)/sum(b);
                     for i=1:length(b)
-                        if u <=b2(i) then
+                        if u<=b2(i) then
                             [km,lm]=find(A==b(i));
                             break
                         end
@@ -196,16 +228,31 @@ for n=1:NbIter
                     g=grand(1,"uin",1,length(km));
                     km=km(g);
                     lm=lm(g);
-                    B=pcch(a,c,NC,D(km),km);
+//                    if n>=50 & pa==1 then
+//                        pause
+//                    end
+                    B=PCCH(NC)(km);
                     B=B(B<>NC);
                     B=B';
                     X(pa)(k)=[X(pa)(k) B lm];
-                    Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 1];
+                    if Gachette==0 then
+                        Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 1];
+                    else
+                        Y(pa)(k)=[Y(pa)(k) zeros(1,length(B)) 0];
+                    end
                     CC=CC+q2(km,lm,pa);
                     q2(km,lm,pa)=0;
                     q2(lm,km,pa)=0;
                     NC=lm;
                 end
+                Gachette=0;
+            end
+            if NC<>1 then
+                B=PCCH(NC)(1);
+                B=B(B<>NC);
+                B=B';
+                X(pa)(k)=[X(pa)(k) B];
+                Y(pa)(k)=[Y(k) zeros(1,length(B))];
             end
             CC=0;
             NC=0;
@@ -233,9 +280,9 @@ for n=1:NbIter
         for k=1:N
             I=find(Y(pa)(k)==1);
             for h=1:(length(I)-1) //Traces "intra-tournées"
-                tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+                tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)+exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
                 for v=VP(pa)(1)
-                    tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+                    tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),v)+(1/2)*exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
                 end
             end
         end
@@ -243,16 +290,16 @@ for n=1:NbIter
             I1=find(Y(pa)(k-1)==1);
             I2=find(Y(pa)(k)==1);
             if I1<>[] & I2<>[] then
-                tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+                tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),pa)+exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
                 for v=VP(pa)(1)
-                    tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+                    tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)=tau(T(X(pa)(k-1)(I1(length(I1))),X(pa)(k-1)(I1(length(I1))+1)),T(X(pa)(k)(I2(1)),X(pa)(k)(I2(1)+1)),v)+(1/2)*exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
                 end
             end
         end
         if length(X(pa)(1))>1 then
-            tau1(X(pa)(1)(1),X(pa)(1)(2),pa)=tau1(X(pa)(1)(1),X(pa)(1)(2),pa)+exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0); //Trace sur le tout premier arc
+            tau1(X(pa)(1)(1),X(pa)(1)(2),pa)=tau1(X(pa)(1)(1),X(pa)(1)(2),pa)+exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0); //Trace sur le tout premier arc
             for v=VP(pa)(1)
-                tau1(X(pa)(1)(1),X(pa)(1)(2),v)=tau1(X(pa)(1)(1),X(pa)(1)(2),v)+(1/2)*exp((Lseuil-L(pa,n)))*(Lseuil-L(pa,n)>=0);
+                tau1(X(pa)(1)(1),X(pa)(1)(2),v)=tau1(X(pa)(1)(1),X(pa)(1)(2),v)+(1/2)*exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
             end
         end
     end
@@ -282,5 +329,4 @@ end
 Xsol=Xmin(I);
 Ysol=Ymin(I);
 [Xsol,Ysol]=modif(a,SE,Xsol,Ysol);
-
 t=toc();
