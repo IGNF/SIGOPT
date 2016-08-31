@@ -12,7 +12,7 @@ public class Export {
 
 	public static void main(String[] args) throws Exception {
 
-		String folder = CoordinateMatrix.class.getResource("/data/sa-uncertainty/test1/").getPath();
+		String folder =  CoordinateMatrix.class.getResource("/data/sa-uncertainty/test1/").getPath();
 		String fileCoord = folder + "coordonnees.csv";
 		String fileMatDistance = folder + "matrice_distance.csv";
 		String trashQuant = folder + "trash_quant.csv";
@@ -33,7 +33,7 @@ public class Export {
 		NodeExporter.export(cM, folderOut + "node.shp");
 		EdgeExporter.export(cM, dM, trashMatrix, folderOut + "edge.shp");
 		
-		if((new File(pathFile)).exists() &&  ( new File(removeFile).exists())){
+		if(((new File(pathFile)).exists()) &&  ( new File(removeFile).exists())){
 			PathExporter.exportPath(cM, dM, new File(pathFile), new File(removeFile), folderOut + "tournee.shp");
 		}
 		
