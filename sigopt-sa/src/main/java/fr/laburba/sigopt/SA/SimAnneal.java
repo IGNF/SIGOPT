@@ -1,6 +1,7 @@
 package fr.laburba.sigopt.SA;
 
 import java.io.File;
+import java.io.IOException;
 
 import fr.laburba.sigopt.loader.input.DistanceMatrix;
 
@@ -16,7 +17,7 @@ public class SimAnneal {
 	        return Math.exp((energy - newEnergy) / temperature);
 	    }
 
-	    public static void main(String[] args) {
+	    public static void main(String[] args) throws IOException {
 	    	File f = new File(DistanceMatrix.class.getResource("/data/idf/mat_dist.csv").getPath());
 			DistanceMatrix dM = new DistanceMatrix(f);
 	        
@@ -32,6 +33,7 @@ public class SimAnneal {
 	        
 	        System.out.println("Initial solution distance: " + currentSolution.getDistanceTab());
 
+	        /*
 	        // Set as current best
 	        DistanceMatrix best = new  DistanceMatrix(currentSolution.getDistanceTab());
 	        
@@ -61,6 +63,6 @@ public class SimAnneal {
 	        }
 
 	        System.out.println("Final solution distance: " + best.getDistanceTab());
-	        System.out.println("Tour: " + best);
+	        System.out.println("Tour: " + best);*/
 	    }
 	}

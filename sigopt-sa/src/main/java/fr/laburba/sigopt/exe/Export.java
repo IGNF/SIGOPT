@@ -32,7 +32,13 @@ public class Export {
 
 		NodeExporter.export(cM, folderOut + "node.shp");
 		EdgeExporter.export(cM, dM, trashMatrix, folderOut + "edge.shp");
-		PathExporter.exportPath(cM, dM, new File(pathFile), new File(removeFile), folderOut + "tournee.shp");
+		
+		if((new File(pathFile)).exists() &&  ( new File(removeFile).exists())){
+			PathExporter.exportPath(cM, dM, new File(pathFile), new File(removeFile), folderOut + "tournee.shp");
+		}
+		
+		
+
 
 	}
 }
