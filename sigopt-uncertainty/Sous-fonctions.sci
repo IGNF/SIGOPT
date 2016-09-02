@@ -87,7 +87,7 @@ endfunction
 //Coût d'une solution (avec le chemin en entrée) pour Colonie2
 function G=cout2(X,Y,c,q)
     lambda=1;
-    gamma=4/mean(q);
+    gamma=4/mean(q); // 4/mean(q)
     A=0;
     B=sum(q)/2;
     for k=1:size(X)
@@ -199,6 +199,43 @@ function [MS1,MS2]=modif(a,SE,X,Y) //Entrées: Matrice d'adjacence initiale, som
     end
     MS1=X;
     MS2=Y;
+endfunction
+
+//Stratégie de modification/réparation
+function [MS1,MS2]=modif2(a,SE,X,Y) //Entrées: Matrice d'adjacence initiale, sommets engloutis, tournée à réparer et vecteur des déblayages
+    NS=size(a,1);
+    MS1=list();
+    MS2=list();
+    for h=SE //Nouvelle matrice d'adjacence
+        a(h,:)=zeros(1,NS);
+        a(:,h)=zeros(NS,1);
+    end
+    for k=1:size(X)
+        MS1(k)=[];
+        MS2(k)=[];
+        AS=list();
+        l=1;
+        for h=1:length(Y(k))
+            if Y(k)(h)==1 then
+                if intersect([X(k)(h) X(k)(h+1)],SE)<>[] then
+                    Y(k)(h)=0;
+                else
+                    AS(l)=[X(k)(h) X(k)(h+1)];
+                    l=l+1;
+                end
+            end
+        end
+        MS1(k)=pcch2(a,c,1,AS(1)(1))';
+        MS2(k)=[zeros(1,length(MS1(k))-1) 1];
+        if size(AS)>1 then
+        for h=2:size(AS)
+            MS1(k)=[MS1(k) pcch2(a,c,AS(h-1)(2),AS(h)(1))'];
+            MS2(k)=[MS2(k) zeros(1,length(pcch2(a,c,AS(h-1)(2),AS(h)(1)))-1) 1];
+        end
+        end
+        MS1(k)=[MS1(k) pcch2(a,c,AS(size(AS))(2),1)'];
+        MS2(k)=[MS2(k) zeros(1,length(pcch2(a,c,AS(size(AS))(2),1))-1)];
+    end
 endfunction
 
 //Cout d'une solution pour Colonie3
