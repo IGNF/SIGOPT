@@ -38,8 +38,6 @@ for k=1:NS
     V(k)=find(a(k,:)==1);
 end
 VA=V; //Voisinages initiaux
-N=3; //Nombre de tournées
-C=170; //Capacité d'un véhicule
 CC=0; //Capacité courante utilisée
 tau=ones(NA,NA,P); //Phéromones (entre deux arcs servis consécutivement)
 az=1;
@@ -61,39 +59,47 @@ tau1A=tau1;
 rho=0.99; //Coefficient d'évaporation
 alpha=1;
 beta=1;
+N=N*ones(1,P);
+
+for pa=1:P //Adaptation du nombre de camions
+    Q=sum(q2A(:,:,pa))/2;
+    while Q/(N(pa)*C)>0.9
+        N(pa)=N(pa)+1;
+    end
+end
 
 //Colonie de fourmis intrusive
 
 Gachette=0;
-Lseuil=110*ones(1,P); //Plafond des bonnes solutions
+Lseuil=200*ones(1,P); //Plafond des bonnes solutions
 NC=0; //Noeud courant
 pp=1; //Probabilité de diversification
-K=3;
+K=5;
 NbIter=300;
 Compteur=0;
 tau=tauA;
 tau1=tau1A;
 Lmin=%inf*ones(1,P);
 Lmin1=%inf*ones(1,P);
-L=ones(P,NbIter);
+L=%inf*ones(P,NbIter);
 X=list();
 Y=list();
 Xmin=list();
 Ymin=list();
 t1=zeros(1,NbIter);
 t2=zeros(1,NbIter);
-pe=0.01^(1/300);
+pe=0.005^(1/NbIter);
 
 for n=1:NbIter
     pp=pe*pp;
-    for pa=1:P
+    for pa=15
         X(pa)=list();
         Y(pa)=list();
-        for k=1:N
+        for k=1:N(pa)
             X(pa)(k)=1;
             Y(pa)(k)=[];
         end
-        for k=1:N
+        for k=1:N(pa)
             while NC<>1
                 p=rand(1,'uniform');
                 if NC==0 then
@@ -257,6 +263,7 @@ for n=1:NbIter
             CC=0;
             NC=0;
         end
+
         L(pa,n)=cout2(X(pa),Y(pa),c,q2A(:,:,pa));
         Lmin(pa)=min(L(pa,:));
         if n==1 then
@@ -277,7 +284,7 @@ for n=1:NbIter
             Ymin(pa)=Y(pa);
             Lmin1(pa)=Lmin(pa);
         end
-        for k=1:N
+        for k=1:N(pa)
             I=find(Y(pa)(k)==1);
             for h=1:(length(I)-1) //Traces "intra-tournées"
                 tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)=tau(T(X(pa)(k)(I(h)),X(pa)(k)(I(h)+1)),T(X(pa)(k)(I(h+1)),X(pa)(k)(I(h+1)+1)),pa)+exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
@@ -286,7 +293,7 @@ for n=1:NbIter
                 end
             end
         end
-        for k=2:N //Traces "inter-tournées"
+        for k=2:N(pa) //Traces "inter-tournées"
             I1=find(Y(pa)(k-1)==1);
             I2=find(Y(pa)(k)==1);
             if I1<>[] & I2<>[] then
@@ -302,18 +309,20 @@ for n=1:NbIter
                 tau1(X(pa)(1)(1),X(pa)(1)(2),v)=tau1(X(pa)(1)(1),X(pa)(1)(2),v)+(1/2)*exp((Lseuil(pa)-L(pa,n)))*(Lseuil(pa)-L(pa,n)>=0);
             end
         end
+        Lseuil(pa)=min(Lseuil(pa),Lmin(pa)*1.15);
     end
     q2=q2A;
 end
 
 //Opérateur de réparation
 //Réalisations
+
 ks=[25 35]; //Shape parameters
 mu=[6 7]; //Moyennes
 Beta=ks./mu; //Rate parameters
 xi(1)=grand(1,1,'gam',ks(1),Beta(1));
 xi(2)=grand(1,1,'gam',ks(2),Beta(2));
-hcrue=2.1;
+hcrue=6.5;
 SE=1:NS;
 SE=SE(alt(SE)<=hcrue);
 A=zeros(1,pa);
@@ -328,5 +337,6 @@ for h=1:NPE
 end
 Xsol=Xmin(I);
 Ysol=Ymin(I);
-[Xsol,Ysol]=modif(a,SE,Xsol,Ysol);
+[Xsol,Ysol]=modif2(a,SE,Xsol,Ysol);
+
 t=toc();
