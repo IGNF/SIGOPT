@@ -87,7 +87,7 @@ endfunction
 //Coût d'une solution (avec le chemin en entrée) pour Colonie2
 function G=cout2(X,Y,c,q)
     lambda=1;
-    gamma=4/mean(q); // 4/mean(q)
+    Gamma=4/mean(q); // 4/mean(q)
     A=0;
     B=sum(q)/2;
     for k=1:size(X)
@@ -98,7 +98,7 @@ function G=cout2(X,Y,c,q)
             end
         end
     end
-    G=lambda*A+gamma*B;
+    G=lambda*A+Gamma*B;
 endfunction
 
 //Une solution est-elle admissible?
@@ -164,7 +164,7 @@ function ind=GIinv(k,n,l)
     end
 endfunction
 
-//Stratégie de modification/réparation
+//Stratégie de modification/réparation (obsolète)
 function [MS1,MS2]=modif(a,SE,X,Y) //Entrées: Matrice d'adjacence initiale, sommets engloutis, tournée à réparer et vecteur des déblayages
     NS=size(a,1);
     for h=SE //Nouvelle matrice d'adjacence
