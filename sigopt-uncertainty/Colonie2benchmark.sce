@@ -1,8 +1,9 @@
 tic()
 //Importation des données
 
-mclose('val4D.dat');
-u=mopen('val4D.dat');
+mclose('val1A.dat');
+u=mopen('val1A.dat');
+
 file_name=mfscanf(u,'\n NOMBRE : %s');
 borne_sup=mfscanf(u,'\n COMENTARIO : %f (cota superior)');
 NS=mfscanf(u,'\n VERTICES : %d');
@@ -25,6 +26,7 @@ for i=1:NAR
     L3=mfscanf(u,'%s %d');
     q(L1(2),L1(4))=L3(2);
 end
+
 //mfscanf(u,'\n %s %s');
 //for i=1:NANR
 //    L1=mfscanf(u,'\n %c %d %c %d %c');
@@ -32,6 +34,7 @@ end
 //    L2=mfscanf(u,'%s %d');
 //    c(L1(2),L1(4))=L2(2);
 //end
+
 L=mfscanf(u,'%s %s %d');
 depot=L(3); //dépôt
 for i=2:NS //Symétrisation
@@ -45,17 +48,35 @@ end
 //Algo
 
 qA=q;
-D=Dijkstra(a,c,depot); //Distance au dépôt
+SE=[];
+sommets=1:NS;
+sommets=setdiff(sommets,SE);
+
+D=list();
+for i=sommets
+    D(i)=Dijkstra(a,c,i);
+end
+
 d=zeros(NS,NS); //distances (coûts)
-for i=1:NS
-    for j=(i+1):NS
-        CH=pcch2(a,c,i,j);
+for i=sommets
+    for j=sommets
+        CH=pcch(a,c,i,D(j),j);
         for h=1:(length(CH)-1)
             d(i,j)=d(i,j)+c(CH(h),CH(h+1));
-            d(j,i)=d(j,i)+c(CH(h),CH(h+1));
         end
     end
 end
+
+PCCH=list();
+for i=sommets
+    PCCH(i)=list();
+end
+for i=sommets
+    for j=sommets
+        PCCH(i)(j)=pcch(a,c,i,D(j),j);
+    end
+end
+
 Md=max(d);
 s=zeros(NS,NS); //Mesure d'économie de déplacement
 for i=1:NS
@@ -86,20 +107,24 @@ rho=0.99; //Coefficient d'évaporation
 alpha=1;
 beta=1;
 Gachette=0;
-Lseuil=borne_sup; //Plafond des bonnes solutions
+Lseuil=borne_sup;
+//Lseuil=borne_sup; //Plafond des bonnes solutions
 NC=0; //Noeud courant
 pp=1; //Probabilité de diversification
-K=3;
-NbIter=500;
+K=5;
+NbIter=5000;
 MC=%inf;
 Compteur=0;
 L=%inf*ones(1,NbIter);
 L2=ones(1,NbIter);
-L3=ones(1,NbIter);
+L3=%inf*ones(1,NbIter);
 Lminsol=%inf;
+pe=0.01^(1/NbIter);
+n=0;
 
-for n=1:NbIter
-    pp=0.99*pp;
+while n<=NbIter
+    n=n+1;
+    pp=pe*pp;
     X=list();
     Y=list();
     for k=1:N
@@ -127,9 +152,6 @@ for n=1:NbIter
                         end
                     end
                 end
-//                if n>=490 then
-//                    pause
-//                end
                 if CC<=C/4 then
                     for i=V(1)
                         A(i,1)=A(i,1)/10;
@@ -142,7 +164,7 @@ for n=1:NbIter
                 end
                 if sum(A)==0 then
                     Gachette=1;
-                    CH=pcch(a,c,NC,D);
+                    CH=PCCH(NC)(1);
                     if length(CH)>=2 then
                         e=CH(length(CH)-1);
                     else
@@ -166,7 +188,7 @@ for n=1:NbIter
                 km=km(g);
                 lm=lm(g);
 //                pause
-                B=pcch2(a,c,NC,km);
+                B=PCCH(NC)(km);
                 B=B(B<>NC);
                 B=B';
                 X(k)=[X(k) B lm];
@@ -209,9 +231,6 @@ for n=1:NbIter
                         end
                     end
                 end
-//                if n>=490 then
-//                    pause
-//                end
                 if CC<=2*C/3 then
                     for i=V(1)
                         A(i,1)=A(i,1)/10;
@@ -224,7 +243,7 @@ for n=1:NbIter
                 end
                 if sum(A)==0 then
                     Gachette=1;
-                    CH=pcch(a,c,NC,D);
+                    CH=PCCH(NC)(1);
                     if length(CH)>=2 then
                         e=CH(length(CH)-1);
                     else
@@ -248,10 +267,11 @@ for n=1:NbIter
                 km=km(g);
                 lm=lm(g);
 //                pause
-                B=pcch2(a,c,NC,km);
+                B=PCCH(NC)(km);
                 B=B(B<>NC);
                 B=B';
                 X(k)=[X(k) B lm];
+
 //                if Gachette==0 then
                     Y(k)=[Y(k) zeros(1,length(B)) 1];
 //                else
@@ -270,7 +290,7 @@ for n=1:NbIter
             //            pause
         end
         if NC<>1 then
-            B=pcch2(a,c,NC,1);
+            B=PCCH(NC)(1);
             B=B(B<>NC);
             B=B';
             X(k)=[X(k) B];
@@ -281,7 +301,9 @@ for n=1:NbIter
     end
     q=qA;
     L(n)=cout2(X,Y,c,qA);
-    L3(n)=coutcarp(X,Y,c,qA);
+    if IsSolution(X,Y,qA)==1 then
+        L3(n)=coutcarp(X,Y,c,qA);
+    end
     Lmin=min(L);
     if IsSolution(X,Y,qA)==1 & L3(n)<Lminsol then
         Xminsol=X;
@@ -296,31 +318,35 @@ for n=1:NbIter
     tau=rho*tau;
     tau1=rho*tau1;
     if L(n)<Lmin1 then
-        Compteur=Compteur+1;
+        disp(L(n));
         tau=tauA;
         tau1=a;
         Xmin=X;
         Ymin=Y;
         Lmin1=Lmin;
     end
-    for k=1:N
-        I=find(Y(k)==1);
-        for h=1:(length(I)-1)
-            //Traces "intra-tournées"
-            tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))=tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
+    if IsSolution(X,Y,qA)==1 then //test
+        Compteur=Compteur+1;
+        La=union(L,L);
+        La=gsort(La,'g','i');
+        La=La(1:min(10,length(La)));
+        for k=1:N
+            I=find(Y(k)==1);
+            for h=1:(length(I)-1)
+                //Traces "intra-tournées"
+                tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))=tau(T(X(k)(I(h)),X(k)(I(h)+1)),T(X(k)(I(h+1)),X(k)(I(h+1)+1)))+(Lseuil-L(n))^2*(Lseuil-L(n)>=0);
+            end
         end
-    end
-    for k=2:N //Traces "inter-tournées"
-        I1=find(Y(k-1)==1);
-        I2=find(Y(k)==1);
-        if I2<>[] & I1<>[] then
-            tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0);
+        for k=2:N //Traces "inter-tournées"
+            I1=find(Y(k-1)==1);
+            I2=find(Y(k)==1);
+            if I2<>[] & I1<>[] then
+                tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))=tau(T(X(k-1)(I1(length(I1))),X(k-1)(I1(length(I1))+1)),T(X(k)(I2(1)),X(k)(I2(1)+1)))+(Lseuil-L(n))^2*(Lseuil-L(n)>=0);
+            end
         end
-    end
-    tau1(X(1)(1),X(1)(2))=tau1(X(1)(1),X(1)(2))+exp((Lseuil-L(n)))*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
-    Lseuil=min(Lseuil,Lmin+20);
+        tau1(X(1)(1),X(1)(2))=tau1(X(1)(1),X(1)(2))+(Lseuil-L(n))^2*(Lseuil-L(n)>=0); //Trace sur le tout premier arc
+    end//test
+    Lseuil=min(Lseuil,Lminsol*1.2);
 end
-for i=1:NbIter
-    L2(i)=mean(L(i:NbIter));
-end
+
 t=toc();
