@@ -1,0 +1,11 @@
+[general]
+name=Flood_waste_assessment
+description=Tools for assessing flood waste (based on Mecadepi method). This tool need to be completed.
+category=Vector
+version=0.1
+qgisMinimumVersion=2.0
+
+author=Serge Lhomme
+email=serge.lhomme@u-pec.fr
+
+class_name=FloodWasteAssessment
